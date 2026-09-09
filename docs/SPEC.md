@@ -5,21 +5,21 @@ Règle : relue au début de chaque séance ; chaque amendement est daté dans le
 journal. 
   
 ## Étape 1 - en mémoire 
-[ ] npm run dev démarre sans erreur            -> le terminal affiche 
+[X] npm run dev démarre sans erreur            -> le terminal affiche 
 l'adresse du serveur 
-[ ] GET /health                                -> 200, {"ok":true} 
-[ ] Kit chargé une seule fois au démarrage     -> readFileSync hors des 
+[X] GET /health                                -> 200, {"ok":true} 
+[X] Kit chargé une seule fois au démarrage     -> readFileSync hors des 
 routes 
-[ ] GET /hotels                                -> 200, tableau de 3 hôtels 
-[ ] GET /hotels/:id                            -> 200 la fiche, ou 404 avec 
+[X] GET /hotels                                -> 200, tableau de 3 hôtels 
+[X] GET /hotels/:id                            -> 200 la fiche, ou 404 avec 
 corps JSON 
-[ ] GET /chambres                              -> 200, tableau de 32 
+[X] GET /chambres                              -> 200, tableau de 32 
 chambres 
-[ ] GET /chambres/:id                          -> 200 la fiche, ou 404 avec 
+[X] GET /chambres/:id                          -> 200 la fiche, ou 404 avec 
 corps JSON 
-[ ] req.params.id converti avec Number()       -> /hotels/1 répond 200, 
+[X] req.params.id converti avec Number()       -> /hotels/1 répond 200, 
 /hotels/abc répond 404 
-[ ] .env avec PORT et DATABASE_URL             -> le fichier existe, il 
+[X] .env avec PORT et DATABASE_URL             -> le fichier existe, il 
 n'est pas commité 
   
 ## Étapes 2 à 8 - déclarées, non franchies 
