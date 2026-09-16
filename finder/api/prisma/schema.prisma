@@ -14,13 +14,55 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Chambre {
+model Chambres {
   id Int @id @default(autoincrement())
-  hotelId Int @map("hotel_id")
+  hotel Hotels? @relation(fields: [hotelId], references: [id])
+  hotelId Int? @map("hotel_id")
   numero String @map("numero")
   categorie String @map("categorie")
   capacite Int @map("capacite")
   prixNuit Int @map("prix_nuit")
   description String @map("description")
+  disponible Boolean @map("disponible")
+  reservation Reservations[]
+}
 
+model Hotels {
+  id Int @id @default(autoincrement())
+  nom String @map("nom")
+  etoiles Int @map("etoiles")
+  adresse String @map("adresse")
+  codePostal String @map("code_postal")
+  ville String @map("ville")
+  telephone String @map("telephone")
+  email String @map("email")
+  gerant String @map("gerant")
+  description String @map("description")
+  chambre Chambres[]
+  comptes Comptes[]
+}
+
+model Comptes {
+  id Int @id @default(autoincrement())
+  role String @map("role")
+  email String @map("email")
+  motDePasseClaire String @map("mot_de_passe_clair")
+  nom String @map("nom")
+  prenom String @map("prenom")
+  hotel Hotels? @relation(fields: [hotelId], references: [id])
+  hotelId Int? @map("hotel_id")
+  telephone String? @map("telephone")
+  note String? @map("note")
+}
+
+model Reservations {
+  id Int @id @default(autoincrement())
+  voyageurId Int @map("voyageur_id")
+  chambre Chambres @relation(fields: [chambreId], references: [id])
+  chambreId Int @map("chambre_id")
+  dateArrivee DateTime @default(now()) @map("date_arrivee")
+  dateDepart DateTime @default(now()) @map("date_depart")
+  nbPersonnes Int @map("nb_personnes")
+  status String @map("status")
+  demandeSpeciale String? @map("demande_speciale")
 }

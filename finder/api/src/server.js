@@ -2,6 +2,10 @@ import 'dotenv/config';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import express from 'express';
+import { PrismaClient } from '../src/generated/prisma/client.ts';
+
+const prisma = new PrismaClient();
+//app.use
 
 const chambres = JSON.parse(readFileSync(path.join(import.meta.dirname, '..', 'finder-data', 'chambres.json'), 'utf8'));
 const hotels = JSON.parse(readFileSync(path.join(import.meta.dirname, '..', 'finder-data', 'hotels.json'), 'utf8'));
@@ -13,22 +17,22 @@ app.get('/', (req, res) => {
     res.json({ message: 'API en ligne' });
 });
 
-//app.get('/chambres', (req, res) => res.json(chambres));
-app.get('/hotels', (req, res) => res.json(hotels));
-app.get('/comptes', (req, res) => res.json(comptes));
-app.get('/reservations', (req, res) => res.json(reservations));
+app.get('/chambres', async (req, res) => res.json(await prisma.chambres.findMany()));
+app.get('/hotels', async (req, res) => res.json(await prisma.hotels.findMany()));
+app.get('/comptes', async (req, res) => res.json(await prisma.comptes.findMany()));
+app.get('/reservations', async (req, res) => res.json(await prisma.reservations.findMany()));
 
 
-app.get('/chambres/:id', (req, res) => {
+app.get('/chambres/:id', async (req, res) => {
     const id = Number(req.params.id);
-    const chambre = chambres.find(chambre => chambre.id === id);
+    const chambre = await prisma.chambres.findUnique({ where: { id } });
     if (!chambre) { 
         return res.status(404).json({ error: 'Chambre non trouvée' });
     }
     res.json(chambre);
 });
 
-app.get('/chambres', (req, res) => {
+app.get('/chambres', async (req, res) => {
     const prix = Number(req.query.prix_max);
     const chambre = chambres.filter(chambre => chambre.prix_nuit <= prix);
     if (!chambre) { 
@@ -41,41 +45,47 @@ app.get('/chambres', (req, res) => {
 });
 
 
-app.get('/hotels/:id', (req, res) => {
+app.get('/hotels/:id',async (req, res) => {
     const id = Number(req.params.id);
-    const hotel = hotels.find(hotel => hotel.id === id);
+    const hotel = await prisma.hotels.findUnique({ where: { id } });
     if (!hotel) { 
         return res.status(404).json({ error: 'Hôtel non trouvé' });
     }
     res.json(hotel);
 });
 
-app.get('/comptes/:id', (req, res) => {
+app.get ('/hotels/:id/chambres', async (req, res) => {
     const id = Number(req.params.id);
-    const compte = comptes.find(compte => compte.id === id);
+    const chambres = await prisma.chambres.findMany({
+        where: { hotelId: id },
+        //orderBy: { id: 'asc' }
+    });
+    if (chambres.length === 0) { 
+        return res.status(404).json({ error: 'la chambre de l\'hôtel non trouvée' });
+    }
+    res.json(chambres);
+});
+
+
+app.get('/comptes/:id', async (req, res) => {
+    const id = Number(req.params.id);
+    const compte = await prisma.comptes.findUnique({ where: { id } });
     if (!compte) { 
         return res.status(404).json({ error: 'Compte non trouvé' });
     }
     res.json(compte);
 });
 
-app.get('/reservations/:id', (req, res) => {
+app.get('/reservations/:id', async (req, res) => {
     const id = Number(req.params.id);
-    const reservation = reservations.find(reservation => reservation.id === id);
+    const reservation = await prisma.reservations.findUnique({ where: { id } });
     if (!reservation) { 
         return res.status(404).json({ error: 'Réservation non trouvée' });
     }
     res.json(reservation);
 });
 
-app.get('/hotels/:id', (req, res) => {
-    const id = Number(req.params.id);
-    const hotel = hotels.find(hotel => hotel.id === id);
-    if (!hotel) { 
-        return res.status(404).json({ error: 'Hôtel non trouvé' });
-    }
-    res.json(hotel);
-});
+
 const PORT = 3000;
 
 app.listen(PORT, () => {
