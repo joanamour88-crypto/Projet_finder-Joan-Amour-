@@ -26,7 +26,7 @@ app.get('/reservations', async (req, res) => res.json(await prisma.reservations.
 app.get('/chambres/:id', async (req, res) => {
     const id = Number(req.params.id);
     const chambre = await prisma.chambres.findUnique({ where: { id } });
-    if (!chambre) { 
+    if (!chambre || chambre.length === 0 || isNaN(chambres.id)) { 
         return res.status(404).json({ error: 'Chambre non trouvée' });
     }
     res.json(chambre);
