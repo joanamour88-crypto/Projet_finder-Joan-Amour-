@@ -33,15 +33,26 @@ app.get('/chambres/:id', async (req, res) => {
 });
 
 app.get('/chambres', async (req, res) => {
+    const { id, hotel, numero, categorie, capacite } = req.query;
+
+    const filtre = {};
+    if (id) filtre.id = { lte: Number(id) };
+    if (hotel) filtre.hotels = { contains: String(hotel) };
+    if (numero) filtre.numero = { contains: String(numero) };
+    if (categorie) filtre.categorie = { contains: String(categorie) };
+    if (capacite) filtre.capacite = { lte: Number(capacite) };
+
     const prix = Number(req.query.prix_max);
     const chambre = chambres.filter(chambre => chambre.prix_nuit <= prix);
+
     if (!chambre) { 
         return res.status(404).json({ error: 'Chambre non trouvée' });
     }
     if (isNaN(prix) /*|| chambre.length === 0*/) {
         return res.status(400).json({ error: 'Le prix doit être un nombre' });
     }
-    res.json(chambre);
+
+    res.json(await prisma.chambres.findMany({ where: filtre }));
 });
 
 
