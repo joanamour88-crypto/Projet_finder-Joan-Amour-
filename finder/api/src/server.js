@@ -17,22 +17,16 @@ app.get('/', (req, res) => {
     res.json({ message: 'API en ligne' });
 });
 
-app.get('/chambres', async (req, res) => res.json(await prisma.chambres.findMany()));
-app.get('/hotels', async (req, res) => res.json(await prisma.hotels.findMany()));
-app.get('/comptes', async (req, res) => res.json(await prisma.comptes.findMany()));
-app.get('/reservations', async (req, res) => res.json(await prisma.reservations.findMany()));
-
-
-app.get('/chambres/:id', async (req, res) => {
+/*app.get('/chambres/:id', async (req, res) => {
     const id = Number(req.params.id);
     const chambre = await prisma.chambres.findUnique({ where: { id } });
-    if (!chambre || chambre.length === 0 || isNaN(chambres.id)) { 
+    if (!chambre) {
         return res.status(404).json({ error: 'Chambre non trouvée' });
     }
     res.json(chambre);
-});
+});*/
 
-app.get('/chambres', async (req, res) => {
+/*app.get('/chambres', async (req, res) => {
     const { id, hotel, numero, categorie, capacite } = req.query;
 
     const filtre = {};
@@ -48,11 +42,35 @@ app.get('/chambres', async (req, res) => {
     if (!chambre) { 
         return res.status(404).json({ error: 'Chambre non trouvée' });
     }
-    if (isNaN(prix) /*|| chambre.length === 0*/) {
+    if (isNaN(prix) || chambre.length === 0) {
         return res.status(400).json({ error: 'Le prix doit être un nombre' });
     }
+    res.json(chambre);
+});*/
 
-    res.json(await prisma.chambres.findMany({ where: filtre }));
+app.get('/chambres', async (req, res) => {
+  const { hotel, date_debut, date_fin, capacite, prix_max, categorie } = req.query;
+  
+  const filtre = {};
+  if (hotel) filtre.hotel_id = Number(hotel);
+  if (capacite) filtre.capacite = { gte: Number(capacite) };
+  if (prix_max) filtre.prix = { lte: Number(prix_max) };
+  if (categorie) filtre.categorie = categorie;
+
+  if (date_debut && date_fin) {
+    const debut = new Date(date_debut);
+    const fin = new Date(date_fin);
+
+    filtre.reservations = {
+      none: {
+        statut: 'confirmee',
+        date_debut: { lt: fin },
+        date_fin: { gt: debut },
+      },
+    };
+  }
+
+  res.json(await prisma.chambres.findMany({ where: filtre }));
 });
 
 
