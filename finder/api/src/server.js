@@ -19,24 +19,13 @@ app.get('/', (req, res) => {
     res.json({ message: 'API en ligne' });
 });
 
-function authentification(req, res, next) {
-    const entete =req.headers.authorization || '';
-    const token = entete.split('Bearer','');
-    try {
-        req.user = jwt.verify(token, process.env.JWT_SECRET);
-        next();
-    } catch {
-        res.status(401).json({ error: 'Token invalide' });
-    }
-};
-
 app.get('/chambres', async (req, res) => {
   const { hotel, date_debut, date_fin, capacite, prix_max, categorie } = req.query;
 
   const filtre = {};
   if (hotel) filtre.hotelId = Number(hotel);
-  if (capacite) filtre.capacite = { gte: Number(capacite) }; //greater than or equal to
-  if (prix_max) filtre.prix = { lte: Number(prix_max) }; //less than or equal to
+  if (capacite) filtre.capacite = { gte: Number(capacite) }; //gte = greater than or equal to
+  if (prix_max) filtre.prix = { lte: Number(prix_max) }; //lte = less than or equal to
   if (categorie) filtre.categorie = categorie;
 
   if (date_debut && date_fin && date_debut < date_fin) {
@@ -44,8 +33,8 @@ app.get('/chambres', async (req, res) => {
     filtre.reservation = {
       none: {
         statut: 'confirmee',
-        dateDepart: { lt: new Date(date_fin)}, //less than
-        dateArrivee: { gt: new Date(date_debut) }, //greater than
+        dateDepart: { lt: new Date(date_fin)}, //lt = less than
+        dateArrivee: { gt: new Date(date_debut) }, //gt = greater than
       },
     };
   } else if (date_debut && date_fin && date_debut > date_fin) {
@@ -55,33 +44,56 @@ app.get('/chambres', async (req, res) => {
   res.json(await prisma.chambres.findMany({ where: filtre }));
 });
 
-app.post('/auth/register', async (req, res) => {
-    const {email, motDePasseClaire, nom, prenom, telephone, note } = req.body;
-    const hashMDP = await bcrypt.hash(motDePasseClaire, 10);
-    await prisma.comptes.create({
-        data: {email, motDePasseClaire: hashMDP,note, nom, prenom, telephone, role: "voyageur"},
-        select: { id: true, email: true, nom: true, prenom: true, telephone: true , note:true},
-    });
+app.post('/chambres', authentification, exigeRole('hotelier'), async (req, res) => {
+    const { numero, categorie, capacite, prixNuit, description, disponible } = req.body;
 
-    res.status(201).json({ message: 'Compte créé avec succès' });    
+    const chambre = await prisma.chambres.create({
+        data: {
+            numero,
+            categorie,
+            capacite,
+            prixNuit,
+            description,
+            disponible,
+            hotelId: req.user.hotelId,
+        },
+    });
+    res.status(201).json(chambre);
 });
 
-app.post('/auth/login', async (req, res) => {
-    const { email, motDePasseClaire } = req.body;
+app.patch('/chambres/:id', authentification, exigeRole('hotelier'), async (req, res) => {
+    const id = parseInt(req.params.id);
+    const { numero, categorie, capacite, prixNuit, description, disponible } = req.body;
 
-    const user = await prisma.comptes.findFirst({ where: { email } });
-    if (!user || !(await bcrypt.compare(motDePasseClaire, user.motDePasseClaire))) {
-        return res.status(401).json({ error: 'Identifiants invalides' });
-    };
+    const chambre = await prisma.chambres.findUnique({ where: { id } });
+    if (!chambre) {
+        return res.status(404).json({ error: 'Chambre introuvable' });
+    }
+    if (chambre.hotelId !== req.user.hotelId) {
+        return res.status(403).json({ error: 'Accès refusé' });
+    }
 
-    /*const ok = await bcrypt.compare(motDePasseClaire, user.motDePasseClaire);
-    if (!ok) {
-        return res.status(401).json({ error: 'Identifiants invalides' });
-    }*/
-    //console.log(process.env.JWT_SECRET);
-    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
+    const updated = await prisma.chambres.update({
+        where: { id },
+        data: { numero, categorie, capacite, prixNuit, description, disponible },
+    });
 
-    res.json({ token });
+    res.json(updated);
+});
+
+app.delete('/chambres/:id', authentification, exigeRole('hotelier'), async (req, res) => {
+    const id = parseInt(req.params.id);
+
+    const chambre = await prisma.chambres.findUnique({ where: { id } });
+    if (!chambre) {
+        return res.status(404).json({ error: 'Chambre introuvable' });
+    }
+    if (chambre.hotelId !== req.user.hotelId) {
+        return res.status(403).json({ error: 'Accès refusé' });
+    }
+
+    await prisma.chambres.delete({ where: { id } });
+    res.status(204).send();
 });
 
 app.get('/hotels/:id',async (req, res) => {
@@ -105,7 +117,6 @@ app.get ('/hotels/:id/chambres', async (req, res) => {
     res.json(chambres);
 });
 
-
 app.get('/comptes/:id', async (req, res) => {
     const id = Number(req.params.id);
     const compte = await prisma.comptes.findUnique({ where: { id } });
@@ -115,6 +126,22 @@ app.get('/comptes/:id', async (req, res) => {
     res.json(compte);
 });
 
+function authentification(req, res, next) {
+    const entete =req.headers.authorization || '';
+    const token = entete.split('Bearer','');
+    try {
+        req.user = jwt.verify(token, process.env.JWT_SECRET);
+        next();
+    } catch {
+        res.status(401).json({ error: 'Token invalide' });
+    }
+};
+
+function exigeRole(...role){
+    return (req, res, next) => {
+        role.includes(req.user.role) ? next() : res.status(403).json({ error: 'Accès refusé' });
+    }
+}
 app.get('/reservations/:id', async (req, res) => {
     const id = Number(req.params.id);
     const reservation = await prisma.reservations.findUnique({ where: { id } });
@@ -124,6 +151,55 @@ app.get('/reservations/:id', async (req, res) => {
     res.json(reservation);
 });
 
+app.get('/voyageur/me', authentification, exigeRole('voyageur'), async (req, res) => {
+    const voyageur = await prisma.comptes.findUnique({ where: { id: req.user.id } });
+    if (!voyageur) {
+        return res.status(404).json({ error: 'Voyageur non trouvé' });
+    }
+    res.json({ nom: voyageur.nom, prenom: voyageur.prenom, telephone: voyageur.telephone });
+});
+
+app.patch('/voyageur/me', authentification, exigeRole('voyageur'), async (req, res) => {
+    const { nom, prenom, telephone } = req.body;
+    const voyageur = await prisma.comptes.update({
+        where: { id: req.user.id },
+        data: { nom, prenom, telephone }
+    });
+    if (!voyageur) {
+        return res.status(404).json({ error: 'Voyageur non trouvé' });
+    }
+    res.json(voyageur);
+});
+
+app.post('/auth/register', async (req, res) => {
+    const {email, motDePasseClaire, nom, prenom, telephone, note } = req.body;
+    const hashMDP = await bcrypt.hash(motDePasseClaire, 10);
+    await prisma.comptes.create({
+        data: {email, motDePasseClaire: hashMDP,note, nom, prenom, telephone, role: "voyageur"},
+        select: { id: true, email: true, nom: true, prenom: true, telephone: true , note:true},
+    });
+
+    res.status(201).json({ message: 'Compte créé avec succès' });    
+});
+
+app.post('/auth/login', async (req, res) => {
+    const { email, motDePasseClaire } = req.body;
+
+    const user = await prisma.comptes.findFirst({ where: { email } });
+    if (!user || !(await bcrypt.compare(motDePasseClaire, user.motDePasseClaire))) {
+        return res.status(401).json({ error: 'Identifiants invalides' });
+    };
+
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+    res.json({ token });
+});
+
+app.post('/auth/logout', authentification, (req, res) => {
+    // Ici, vous pouvez gérer la déconnexion côté serveur si nécessaire.
+    // Par exemple, vous pouvez stocker les tokens invalidés dans une base de données.
+    res.status(200).json({ message: 'Déconnexion réussie' });
+});
 
 const PORT = 3000;
 
