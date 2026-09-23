@@ -72,7 +72,7 @@ async function main() {
             dateArrivee: new Date(c.date_arrivee),
             dateDepart: new Date(c.date_depart),
             nbPersonnes: c.nb_personnes,
-            status: c.statut,
+            statut: c.statut,
             demandeSpeciale: c.demande_speciale ?? null,
         })),
     });

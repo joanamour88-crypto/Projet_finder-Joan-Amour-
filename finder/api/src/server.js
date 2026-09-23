@@ -2,6 +2,8 @@ import 'dotenv/config';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import express from 'express';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import { PrismaClient } from '../src/generated/prisma/client.ts';
 
 const prisma = new PrismaClient();
@@ -17,62 +19,70 @@ app.get('/', (req, res) => {
     res.json({ message: 'API en ligne' });
 });
 
-/*app.get('/chambres/:id', async (req, res) => {
-    const id = Number(req.params.id);
-    const chambre = await prisma.chambres.findUnique({ where: { id } });
-    if (!chambre) {
-        return res.status(404).json({ error: 'Chambre non trouvée' });
+function authentification(req, res, next) {
+    const entete =req.headers.authorization || '';
+    const token = entete.split('Bearer','');
+    try {
+        req.user = jwt.verify(token, process.env.JWT_SECRET);
+        next();
+    } catch {
+        res.status(401).json({ error: 'Token invalide' });
     }
-    res.json(chambre);
-});*/
-
-/*app.get('/chambres', async (req, res) => {
-    const { id, hotel, numero, categorie, capacite } = req.query;
-
-    const filtre = {};
-    if (id) filtre.id = { lte: Number(id) };
-    if (hotel) filtre.hotels = { contains: String(hotel) };
-    if (numero) filtre.numero = { contains: String(numero) };
-    if (categorie) filtre.categorie = { contains: String(categorie) };
-    if (capacite) filtre.capacite = { lte: Number(capacite) };
-
-    const prix = Number(req.query.prix_max);
-    const chambre = chambres.filter(chambre => chambre.prix_nuit <= prix);
-
-    if (!chambre) { 
-        return res.status(404).json({ error: 'Chambre non trouvée' });
-    }
-    if (isNaN(prix) || chambre.length === 0) {
-        return res.status(400).json({ error: 'Le prix doit être un nombre' });
-    }
-    res.json(chambre);
-});*/
+};
 
 app.get('/chambres', async (req, res) => {
   const { hotel, date_debut, date_fin, capacite, prix_max, categorie } = req.query;
-  
+
   const filtre = {};
-  if (hotel) filtre.hotel_id = Number(hotel);
-  if (capacite) filtre.capacite = { gte: Number(capacite) };
-  if (prix_max) filtre.prix = { lte: Number(prix_max) };
+  if (hotel) filtre.hotelId = Number(hotel);
+  if (capacite) filtre.capacite = { gte: Number(capacite) }; //greater than or equal to
+  if (prix_max) filtre.prix = { lte: Number(prix_max) }; //less than or equal to
   if (categorie) filtre.categorie = categorie;
 
-  if (date_debut && date_fin) {
-    const debut = new Date(date_debut);
-    const fin = new Date(date_fin);
+  if (date_debut && date_fin && date_debut < date_fin) {
 
-    filtre.reservations = {
+    filtre.reservation = {
       none: {
         statut: 'confirmee',
-        date_debut: { lt: fin },
-        date_fin: { gt: debut },
+        dateDepart: { lt: new Date(date_fin)}, //less than
+        dateArrivee: { gt: new Date(date_debut) }, //greater than
       },
     };
+  } else if (date_debut && date_fin && date_debut > date_fin) {
+    res.status(400).json({ error: 'Erreur dans les dates' });
   }
 
   res.json(await prisma.chambres.findMany({ where: filtre }));
 });
 
+app.post('/auth/register', async (req, res) => {
+    const {email, motDePasseClaire, nom, prenom, telephone, note } = req.body;
+    const hashMDP = await bcrypt.hash(motDePasseClaire, 10);
+    await prisma.comptes.create({
+        data: {email, motDePasseClaire: hashMDP,note, nom, prenom, telephone, role: "voyageur"},
+        select: { id: true, email: true, nom: true, prenom: true, telephone: true , note:true},
+    });
+
+    res.status(201).json({ message: 'Compte créé avec succès' });    
+});
+
+app.post('/auth/login', async (req, res) => {
+    const { email, motDePasseClaire } = req.body;
+
+    const user = await prisma.comptes.findFirst({ where: { email } });
+    if (!user || !(await bcrypt.compare(motDePasseClaire, user.motDePasseClaire))) {
+        return res.status(401).json({ error: 'Identifiants invalides' });
+    };
+
+    /*const ok = await bcrypt.compare(motDePasseClaire, user.motDePasseClaire);
+    if (!ok) {
+        return res.status(401).json({ error: 'Identifiants invalides' });
+    }*/
+    //console.log(process.env.JWT_SECRET);
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+    res.json({ token });
+});
 
 app.get('/hotels/:id',async (req, res) => {
     const id = Number(req.params.id);

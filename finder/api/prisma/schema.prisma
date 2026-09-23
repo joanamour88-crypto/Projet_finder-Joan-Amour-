@@ -63,6 +63,6 @@ model Reservations {
   dateArrivee DateTime @default(now()) @map("date_arrivee")
   dateDepart DateTime @default(now()) @map("date_depart")
   nbPersonnes Int @map("nb_personnes")
-  status String @map("status")
+  statut String @map("statut")
   demandeSpeciale String? @map("demande_speciale")
 }

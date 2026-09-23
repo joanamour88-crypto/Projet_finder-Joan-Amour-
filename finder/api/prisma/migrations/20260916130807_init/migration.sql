@@ -51,7 +51,7 @@ CREATE TABLE `Reservations` (
     `date_arrivee` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `date_depart` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `nb_personnes` INTEGER NOT NULL,
-    `status` VARCHAR(191) NOT NULL,
+    `statut` VARCHAR(191) NOT NULL,
     `demande_speciale` VARCHAR(191) NULL,
 
     PRIMARY KEY (`id`)
