@@ -5,6 +5,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { PrismaClient } from '../src/generated/prisma/client.ts';
+import { schemaInscription, schemaConnexion, schemaModifCompte, schemaChambre, schemaGetChambre, schemaModifChambre, schemaReservation } from '../src/schemas.js';
 
 const prisma = new PrismaClient();
 //app.use
@@ -19,7 +20,43 @@ app.get('/', (req, res) => {
     res.json({ message: 'API en ligne' });
 });
 
-app.get('/chambres', async (req, res) => {
+////////////////////////////////////////////// Fonction valider par le schema /////////////////////////////////////////////////////////////////
+export function valider(schema) {
+    return (req, res, next) => {
+        const resultat = schema.safeParse(req.body);
+        if (!resultat.success) {
+            return res.status(400).json({ erreurs : resultat.error.issues });
+        }
+        req.body = resultat.data;
+        next();
+    };
+}
+
+////////////////////////////////////////////// Fonction d'authentification /////////////////////////////////////////////////////////////////
+
+function authentification(req, res, next) {
+    const entete =req.headers.authorization || '';
+    const token = entete.split('Bearer','');
+    try {
+        req.user = jwt.verify(token, process.env.JWT_SECRET);
+        next();
+    } catch {
+        res.status(401).json({ error: 'Token invalide' });
+    }
+};
+
+////////////////////////////////////////////// Fonction qui exige un rôle /////////////////////////////////////////////////////////////////
+
+function exigeRole(...role){
+    return (req, res, next) => {
+        role.includes(req.user.role) ? next() : res.status(403).json({ error: 'Accès refusé' });
+    }
+}
+
+////////////////////////////////////////////// Chambres  ////////////////////////////////////////////////////////////////////////////////////////
+
+//-- Get --//
+app.get('/chambres', valider(schemaGetChambre), async (req, res) => {
   const { hotel, date_debut, date_fin, capacite, prix_max, categorie } = req.query;
 
   const filtre = {};
@@ -44,7 +81,8 @@ app.get('/chambres', async (req, res) => {
   res.json(await prisma.chambres.findMany({ where: filtre }));
 });
 
-app.post('/chambres', authentification, exigeRole('hotelier'), async (req, res) => {
+//-- Post --//
+app.post('/chambres', authentification, valider(schemaChambre), exigeRole('hotelier'), async (req, res) => {
     const { numero, categorie, capacite, prixNuit, description, disponible } = req.body;
 
     const chambre = await prisma.chambres.create({
@@ -61,7 +99,8 @@ app.post('/chambres', authentification, exigeRole('hotelier'), async (req, res) 
     res.status(201).json(chambre);
 });
 
-app.patch('/chambres/:id', authentification, exigeRole('hotelier'), async (req, res) => {
+//-- Patch --//
+app.patch('/chambres/:id', authentification, valider(schemaModifChambre), exigeRole('hotelier'), async (req, res) => {
     const id = parseInt(req.params.id);
     const { numero, categorie, capacite, prixNuit, description, disponible } = req.body;
 
@@ -81,6 +120,7 @@ app.patch('/chambres/:id', authentification, exigeRole('hotelier'), async (req, 
     res.json(updated);
 });
 
+//-- Delete --//
 app.delete('/chambres/:id', authentification, exigeRole('hotelier'), async (req, res) => {
     const id = parseInt(req.params.id);
 
@@ -96,6 +136,9 @@ app.delete('/chambres/:id', authentification, exigeRole('hotelier'), async (req,
     res.status(204).send();
 });
 
+////////////////////////////////////////////// Hotels ////////////////////////////////////////////////////////////////////////////////////////
+
+//-- Get --//
 app.get('/hotels/:id',async (req, res) => {
     const id = Number(req.params.id);
     const hotel = await prisma.hotels.findUnique({ where: { id } });
@@ -117,6 +160,9 @@ app.get ('/hotels/:id/chambres', async (req, res) => {
     res.json(chambres);
 });
 
+////////////////////////////////////////////// Comptes  ////////////////////////////////////////////////////////////////////////////////////////
+
+//-- Get --//
 app.get('/comptes/:id', async (req, res) => {
     const id = Number(req.params.id);
     const compte = await prisma.comptes.findUnique({ where: { id } });
@@ -126,23 +172,10 @@ app.get('/comptes/:id', async (req, res) => {
     res.json(compte);
 });
 
-function authentification(req, res, next) {
-    const entete =req.headers.authorization || '';
-    const token = entete.split('Bearer','');
-    try {
-        req.user = jwt.verify(token, process.env.JWT_SECRET);
-        next();
-    } catch {
-        res.status(401).json({ error: 'Token invalide' });
-    }
-};
+////////////////////////////////////////////// Reservations  ////////////////////////////////////////////////////////////////////////////////////////
 
-function exigeRole(...role){
-    return (req, res, next) => {
-        role.includes(req.user.role) ? next() : res.status(403).json({ error: 'Accès refusé' });
-    }
-}
-app.get('/reservations/:id', async (req, res) => {
+//-- Get --//
+app.get('/reservations/:id', valider(schemaReservation), async (req, res) => {
     const id = Number(req.params.id);
     const reservation = await prisma.reservations.findUnique({ where: { id } });
     if (!reservation) { 
@@ -151,6 +184,9 @@ app.get('/reservations/:id', async (req, res) => {
     res.json(reservation);
 });
 
+////////////////////////////////////////////// Voyageurs  ////////////////////////////////////////////////////////////////////////////////////////
+
+//-- Get --//
 app.get('/voyageur/me', authentification, exigeRole('voyageur'), async (req, res) => {
     const voyageur = await prisma.comptes.findUnique({ where: { id: req.user.id } });
     if (!voyageur) {
@@ -159,7 +195,7 @@ app.get('/voyageur/me', authentification, exigeRole('voyageur'), async (req, res
     res.json({ nom: voyageur.nom, prenom: voyageur.prenom, telephone: voyageur.telephone });
 });
 
-app.patch('/voyageur/me', authentification, exigeRole('voyageur'), async (req, res) => {
+app.patch('/voyageur/me', authentification, valider(schemaModifCompte), exigeRole('voyageur'), async (req, res) => {
     const { nom, prenom, telephone } = req.body;
     const voyageur = await prisma.comptes.update({
         where: { id: req.user.id },
@@ -171,7 +207,9 @@ app.patch('/voyageur/me', authentification, exigeRole('voyageur'), async (req, r
     res.json(voyageur);
 });
 
-app.post('/auth/register', async (req, res) => {
+////////////////////////////////////////////// Authentification (création, connexion et deconnexion)  ////////////////////////////////////////////////////////////////////////////////////////
+
+app.post('/auth/register', valider(schemaInscription), async (req, res) => {
     const {email, motDePasseClaire, nom, prenom, telephone, note } = req.body;
     const hashMDP = await bcrypt.hash(motDePasseClaire, 10);
     await prisma.comptes.create({
@@ -182,7 +220,7 @@ app.post('/auth/register', async (req, res) => {
     res.status(201).json({ message: 'Compte créé avec succès' });    
 });
 
-app.post('/auth/login', async (req, res) => {
+app.post('/auth/login', valider(schemaConnexion), async (req, res) => {
     const { email, motDePasseClaire } = req.body;
 
     const user = await prisma.comptes.findFirst({ where: { email } });
@@ -196,10 +234,10 @@ app.post('/auth/login', async (req, res) => {
 });
 
 app.post('/auth/logout', authentification, (req, res) => {
-    // Ici, vous pouvez gérer la déconnexion côté serveur si nécessaire.
-    // Par exemple, vous pouvez stocker les tokens invalidés dans une base de données.
     res.status(200).json({ message: 'Déconnexion réussie' });
 });
+
+////////////////////////////////////////////// PORT ////////////////////////////////////////////////////////////////////////////////////////
 
 const PORT = 3000;
 
