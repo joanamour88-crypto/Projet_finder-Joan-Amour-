@@ -21,6 +21,7 @@ app.get('/', (req, res) => {
 });
 
 ////////////////////////////////////////////// Fonction valider par le schema /////////////////////////////////////////////////////////////////
+
 export function valider(schema) {
     return (req, res, next) => {
         const resultat = schema.safeParse(req.body);
@@ -51,6 +52,19 @@ function exigeRole(...role){
     return (req, res, next) => {
         role.includes(req.user.role) ? next() : res.status(403).json({ error: 'Accès refusé' });
     }
+}
+////////////////////////////////////////////// Fonction d'autorisation /////////////////////////////////////////////////////////////////
+
+const TRANSITIONS_AUTORISEES = {
+demande: ['accepte', 'refuse'],
+accepte: ['rendu', 'annule'],
+refuse: [],
+rendu: [],
+annule: []
+};
+
+function transitionValide(statutActuel, statutVoulu) {
+    return (TRANSITIONS_AUTORISEES[statutActuel] || []).includes(statutVoulu);
 }
 
 ////////////////////////////////////////////// Chambres  ////////////////////////////////////////////////////////////////////////////////////////
@@ -84,8 +98,8 @@ app.get('/chambres', valider(schemaGetChambre), async (req, res) => {
 //-- Post --//
 app.post('/chambres', authentification, valider(schemaChambre), exigeRole('hotelier'), async (req, res) => {
     const { numero, categorie, capacite, prixNuit, description, disponible } = req.body;
-
-    const chambre = await prisma.chambres.create({
+    try {
+        const chambre = await prisma.chambres.create({
         data: {
             numero,
             categorie,
@@ -97,6 +111,10 @@ app.post('/chambres', authentification, valider(schemaChambre), exigeRole('hotel
         },
     });
     res.status(201).json(chambre);
+    }
+    catch (e) {
+        res.status(400).json({ erreur: e.message })
+    }
 });
 
 //-- Patch --//
@@ -183,6 +201,80 @@ app.get('/reservations/:id', valider(schemaReservation), async (req, res) => {
     }
     res.json(reservation);
 });
+
+app.get('/reservations/mine', async (req, res) => {
+    const reservations = await prisma.reservations.findMany({
+        where: { reservations: { voyageurId: req.user.voyageurId }}
+    })
+    if (!reservation) {
+        return res.status(404).json({ error: 'Réservation non trouvée' });
+    }
+    res.json(reservations)
+})
+
+app.get('/reservations/received', async (req,res) => {
+    const reservations = await prisma.reservations.findMany({
+        where: { reservations: { chambreId: req.user.chambreId }}
+    })
+    if (!reservation) {
+        return res.status(404).json({ error: 'Réservation non trouvée' });
+    }
+    res.json(reservations)
+})
+
+//-- Post --//
+app.post('/reservations', valider(schemaReservation), async (req, res) => {
+    const {dateArrivee, dateDepart, nbPersonnes, statut, demandespe} = req.body;
+    try {
+        const reservation = await prisma.reservations.create({
+            data: {
+                dateArrivee: new Date(dateArrivee),
+                dateDepart: new Date(dateDepart),
+                nbPersonnes,
+                statut,
+                demandespe,
+                voyageurId: req.user.voyageurId,
+                chambreId: req.user.chambreId
+            }
+        });
+        res.status(201).json(reservation);
+    }
+    catch (e) {
+        res.status(400).json({ erreur: e.message })
+    }
+})
+
+//-- Patch --//
+app.patch('/reservations/:id', async (req, res)=>{
+    const id = parseInt(req.params.id);
+    const { dateArrivee, dateDepart, nbPersonnes, statut, demandespe } = req.body;
+
+    const reservations = await prisma.reservations.findUnique({ where: { id } });
+    if (!reservations) {
+        return res.status(404).json({ error: 'Réservation introuvable' });
+    }
+    if (transitionValide(reservations.statut, 'confirmee')) {
+        return res.status(403).json({ error: 'Accès refusé' });
+    }
+
+    const updated = await prisma.reservations.update({
+        where: { id },
+        data: { dateArrivee, dateDepart, nbPersonnes, statut, demandespe },
+    });
+
+    res.json(updated);
+})
+
+//-- Delete --//
+app.delete('/reservations/:id', async (req, res) =>{
+    try{
+        const id = parseInt(req.params.id);
+        await prisma.reservations.delete({ where: { id }})
+        res.status(204).send();
+    } catch {
+        res.status(404).json({ erreur: 'reservation inexistante'})
+    }
+})
 
 ////////////////////////////////////////////// Voyageurs  ////////////////////////////////////////////////////////////////////////////////////////
 
