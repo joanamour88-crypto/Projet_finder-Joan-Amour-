@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const schemaInscription = z.object({
     email: z.string().email('email invalide'),
-    motDePasse: z.string().min(8, 'mot de passe : 8 caractères minimum'),
+    motDePasseClaire: z.string().min(8, 'mot de passe : 8 caractères minimum'),
     nom: z.string(),
     prenom: z.string(),
     telephone: z.string().optional(),
@@ -11,7 +11,7 @@ export const schemaInscription = z.object({
 
 export const schemaConnexion = z.object({
     email: z.string().email('email invalide'),
-    motDePasse: z.string().min(8, 'mot de passe obligatoire'),
+    motDePasseClaire: z.string().min(8, 'mot de passe obligatoire'),
 });
 
 export const schemaModifCompte = schemaInscription.partial();
@@ -19,16 +19,15 @@ export const schemaChambre = z.object({
     numero: z.string(),
     categorie: z.string(),
     capacite: z.number().int().positive(),
-    prixNuit: z.number().positive(),
+    prixNuit: z.number().int().positive(),
     description: z.string().optional(),
-    disponible: z.boolean(),
-    hotelId: z.number().int().positive()
+    disponible: z.boolean()
 });
 
 export const schemaGetChambre = z.object({
     categorie: z.enum(['simple', 'double', 'suite', 'luxe']).optional(),
     capacite: z.coerce.number().int().positive().optional(),
-    prixMax: z.coerce.number().positive().optional()
+    prixMax: z.coerce.number().int().positive().optional()
 });
 
 export const schemaModifChambre = schemaChambre.partial();

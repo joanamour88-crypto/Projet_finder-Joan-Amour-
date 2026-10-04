@@ -36,7 +36,7 @@ export function valider(schema) {
 
 function authentification(req, res, next) {
     const entete =req.headers.authorization || '';
-    const token = entete.split('Bearer','');
+    const token = entete.replace('Bearer ', ''); /// .replace() -> permet de remplacer 'Bearer ' par le token
     try {
         req.user = jwt.verify(token, process.env.JWT_SECRET);
         next();
@@ -57,46 +57,74 @@ function exigeRole(...role){
 
 //-- Get --//
 app.get('/chambres', valider(schemaGetChambre), async (req, res) => {
-  const { hotel, date_debut, date_fin, capacite, prix_max, categorie } = req.query;
+    try {
+        const { hotel, date_debut, date_fin, capacite, prix_max, categorie } = req.query;
+        console.log('QUERY :', req.query);
+        const filtre = {};
+        if (hotel) filtre.hotelId = Number(hotel);
+        if (capacite) filtre.capacite = { gte: Number(capacite) }; //gte = greater than or equal to
+        if (prix_max) filtre.prixNuit = prix_max !== undefined && { lte: Number(prix_max) }; //lte = less than or equal to
+        if (categorie) filtre.categorie = categorie;
 
-  const filtre = {};
-  if (hotel) filtre.hotelId = Number(hotel);
-  if (capacite) filtre.capacite = { gte: Number(capacite) }; //gte = greater than or equal to
-  if (prix_max) filtre.prix = { lte: Number(prix_max) }; //lte = less than or equal to
-  if (categorie) filtre.categorie = categorie;
+        ///// Permet d'envoyer une erreur 400 si prix_max n'est pas un nombre ou est vide ///////////////////////////////////////////////
+        ///// Generer par claude(Sonnet 5.5)
+        ///// 'typeof' -> permet de vérifier le type de la variable 'prix_max' pour s'assurer qu'il s'agit d'une chaîne de caractères. donc que se soit un Int, un float ou un string
+        ///// 'trim()' -> permet de supprimer les espaces vides au début et à la fin de la chaîne de caractères. donc si l'utilisateur envoie un string vide, il sera considéré comme invalide
+        ///// 'Number.isFinite()' -> permet de vérifier si la valeur convertie en nombre est un nombre fini. donc si l'utilisateur envoie un string qui ne peut pas être converti en nombre, il sera considéré comme invalide
+        ///// ↓ /////
+        if (prix_max !== undefined) {
+            const prixMax = Number(prix_max);
 
-  if (date_debut && date_fin && date_debut < date_fin) {
+            if (typeof prix_max !== 'string' || prix_max.trim() === '' || !Number.isFinite(prixMax)) {
+                return res.status(400).json({ error: "Erreur sur le prix : prix_max doit être un nombre" });
+            }
+        }
+        ///// ↑ /////  
 
-    filtre.reservation = {
-      none: {
-        statut: 'confirmee',
-        dateDepart: { lt: new Date(date_fin)}, //lt = less than
-        dateArrivee: { gt: new Date(date_debut) }, //gt = greater than
-      },
-    };
-  } else if (date_debut && date_fin && date_debut > date_fin) {
-    res.status(400).json({ error: 'Erreur dans les dates' });
-  }
+        if (date_debut && date_fin /*&& date_debut < date_fin*/) {
+            filtre.reservation = {
+                /*none: {
+                    statut: "confirmee",
+                    dateArrivee: { gt: new Date(date_debut) }, //lt = less than -> plus petit que
+                    dateDepart: { lt: new Date(date_fin) } //gt = greater than -> plus grand que
+                },*/
+                none: {
+                    statut: 'confirmee',
+                    dateArrivee: { lt: new Date(date_fin) },
+                    dateDepart: { gt: new Date(date_debut) },
+                },
+            };
+        } else if (date_debut && date_fin && date_debut > date_fin) {
+            return res.status(400).json({ error: 'Erreur dans les dates' });
+        }
 
-  res.json(await prisma.chambres.findMany({ where: filtre }));
+        console.log('FILTRE :', JSON.stringify(filtre, null, 2));
+
+        res.json(await prisma.chambres.findMany({ where: filtre }));
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erreur lors de la récupération des chambres" });
+    }
+    
 });
 
 //-- Post --//
 app.post('/chambres', authentification, valider(schemaChambre), exigeRole('hotelier'), async (req, res) => {
-    const { numero, categorie, capacite, prixNuit, description, disponible } = req.body;
 
-    const chambre = await prisma.chambres.create({
+    const nouvelleChambre = await prisma.chambres.create({
         data: {
-            numero,
+            /*numero,
             categorie,
             capacite,
             prixNuit,
             description,
-            disponible,
+            disponible,*/
+            ...req.body,
             hotelId: req.user.hotelId,
         },
     });
-    res.status(201).json(chambre);
+    res.status(201).json(nouvelleChambre);
 });
 
 //-- Patch --//
@@ -128,9 +156,9 @@ app.delete('/chambres/:id', authentification, exigeRole('hotelier'), async (req,
     if (!chambre) {
         return res.status(404).json({ error: 'Chambre introuvable' });
     }
-    if (chambre.hotelId !== req.user.hotelId) {
+    /*if (chambre.hotelId !== req.user.hotelId) {
         return res.status(403).json({ error: 'Accès refusé' });
-    }
+    }*/
 
     await prisma.chambres.delete({ where: { id } });
     res.status(204).send();
@@ -139,6 +167,17 @@ app.delete('/chambres/:id', authentification, exigeRole('hotelier'), async (req,
 ////////////////////////////////////////////// Hotels ////////////////////////////////////////////////////////////////////////////////////////
 
 //-- Get --//
+app.get('/hotels', async (req, res) => {
+    try {
+        const hotels = await prisma.hotels.findMany({
+            orderBy: { id: 'asc' }
+        });
+        res.json(hotels);
+    } catch (error) {
+        res.status(500).json({ error: "Erreur lors de la récupération des hôtels" });
+    }
+});
+
 app.get('/hotels/:id',async (req, res) => {
     const id = Number(req.params.id);
     const hotel = await prisma.hotels.findUnique({ where: { id } });
@@ -228,19 +267,15 @@ app.post('/auth/login', valider(schemaConnexion), async (req, res) => {
         return res.status(401).json({ error: 'Identifiants invalides' });
     };
 
-    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '24h' });
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role, hotelId: user.hotelId }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
     res.json({ token });
 });
 
-app.post('/auth/logout', authentification, (req, res) => {
-    res.status(200).json({ message: 'Déconnexion réussie' });
+app.post('/auth/logout', authentification, (req, res) => {  //// mettre dle token généré pendant la connexion dans le header (sur postman) pour pouvoir se déconnecter
+    res.status(204).json({ message: 'Déconnexion réussie' });
 });
 
 ////////////////////////////////////////////// PORT ////////////////////////////////////////////////////////////////////////////////////////
 
-const PORT = 3000;
-
-app.listen(PORT, () => {
-    console.log(`API écoute sur http://localhost:${PORT}`);
-});
+app.listen(3000, () => console.log(`API écoute sur http://localhost:3000`));
