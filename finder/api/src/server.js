@@ -4,8 +4,17 @@ import path from 'node:path';
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
 import { PrismaClient } from '../src/generated/prisma/client.ts';
 import { schemaInscription, schemaConnexion, schemaModifCompte, schemaChambre, schemaGetChambre, schemaModifChambre, schemaReservation } from '../src/schemas.js';
+
+/*const spec = swaggerJsdoc({
+    definition: { openapi: '3.0.0', info: { title: 'Finder API', version: '1.0.0' } }, 
+    apis: ['src/server.js']
+});*/
+
+
 
 const prisma = new PrismaClient();
 //app.use
@@ -15,6 +24,18 @@ const hotels = JSON.parse(readFileSync(path.join(import.meta.dirname, '..', 'fin
 
 const app = express();
 app.use(express.json());
+
+const spec = swaggerJsdoc({
+definition: {
+openapi: '3.0.0',
+info: { title: 'API', version: '1.0.0' },
+components: { securitySchemes: { bearerAuth: { type: 'http', scheme:'bearer', bearerFormat: 'JWT' } } },
+},
+apis: ['./src/**/*.js'],
+});
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(spec));
+
 
 app.get('/', (req, res) => {
     res.json({ message: 'API en ligne' });
