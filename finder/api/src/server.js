@@ -145,7 +145,7 @@ app.get('/chambres', valider(schemaGetChambre), async (req, res) => {
 });
 
 //-- Post --//
-app.post('/chambres', authentification, valider(schemaChambre), exigeRole('hotelier'), async (req, res) => {
+app.post('/chambres', authentification, /*valider(schemaChambre),*/ exigeRole('hotelier'), async (req, res) => {
 
     const nouvelleChambre = await prisma.chambres.create({
         data: {
@@ -381,7 +381,7 @@ app.post('/auth/login', valider(schemaConnexion), async (req, res) => {
     res.json({ token });
 });
 
-app.post('/auth/logout', authentification, (req, res) => {  //// mettre dle token généré pendant la connexion dans le header (sur postman) pour pouvoir se déconnecter
+app.post('/auth/logout', authentification, (req, res) => {  //// mettre le token généré pendant la connexion dans le header (sur postman) pour pouvoir se déconnecter
     res.status(204).json({ message: 'Déconnexion réussie' });
 });
 
