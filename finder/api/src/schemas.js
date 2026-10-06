@@ -38,7 +38,7 @@ export const schemaReservation = z.object({
     dateArrivee: z.coerce.date(),
     dateDepart: z.coerce.date(),
     nbPersonnes: z.number().int().positive(),
-    demandeSpecial: z.string().optional()
+    demandeSpeciale: z.string().optional()
 });
 
 const schemaProfil = z.object({

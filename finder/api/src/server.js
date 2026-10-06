@@ -74,7 +74,7 @@ function exigeRole(...role){
         role.includes(req.user.role) ? next() : res.status(403).json({ error: 'Accès refusé' });
     }
 }
-////////////////////////////////////////////// Fonction d'autorisation /////////////////////////////////////////////////////////////////
+////////////////////////////////////////////// Fonction d'autorisation de transition /////////////////////////////////////////////////////////////////
 
 const TRANSITIONS_AUTORISEES = {
 demande: ['accepte', 'refuse'],
@@ -249,6 +249,33 @@ app.get('/comptes/:id', async (req, res) => {
 ////////////////////////////////////////////// Reservations  ////////////////////////////////////////////////////////////////////////////////////////
 
 //-- Get --//
+
+
+app.get('/reservations/mine', authentification, async (req, res) => {
+    try{
+        const reservations = await prisma.reservations.findMany({
+            where: { voyageurId: req.user.id }
+        });
+        res.json(reservations)
+    }
+    catch (e) {
+        res.status(400).json({ erreur: e.message })
+    }
+})
+
+app.get('/reservations/received', authentification, exigeRole('hotelier'), async (req,res) => {
+    try {
+        const reservations = await prisma.reservations.findMany({
+            where: { chambre: { hotelId: req.user.hotelId } },
+            orderBy: { chambreId: 'asc' }
+        });
+        res.json(reservations)
+    }
+    catch (e) {
+        res.status(404).json({ erreur: e.message })
+    }
+})
+
 app.get('/reservations/:id', valider(schemaReservation), async (req, res) => {
     const id = Number(req.params.id);
     const reservation = await prisma.reservations.findUnique({ where: { id } });
@@ -258,42 +285,23 @@ app.get('/reservations/:id', valider(schemaReservation), async (req, res) => {
     res.json(reservation);
 });
 
-app.get('/reservations/mine', async (req, res) => {
-    const reservations = await prisma.reservations.findMany({
-        where: { reservations: { voyageurId: req.user.voyageurId }}
-    })
-    if (!reservation) {
-        return res.status(404).json({ error: 'Réservation non trouvée' });
-    }
-    res.json(reservations)
-})
-
-app.get('/reservations/received', async (req,res) => {
-    const reservations = await prisma.reservations.findMany({
-        where: { reservations: { chambreId: req.user.chambreId }}
-    })
-    if (!reservation) {
-        return res.status(404).json({ error: 'Réservation non trouvée' });
-    }
-    res.json(reservations)
-})
-
 //-- Post --//
-app.post('/reservations', valider(schemaReservation), async (req, res) => {
-    const {dateArrivee, dateDepart, nbPersonnes, statut, demandespe} = req.body;
+app.post('/reservation', authentification, valider(schemaReservation), async (req, res) => {
     try {
-        const reservation = await prisma.reservations.create({
+        const {chambreId, dateArrivee, dateDepart, nbPersonnes, demandeSpeciale} = req.body;
+
+        const newReservation = await prisma.reservations.create({
             data: {
+                voyageurId: req.user.id,
+                chambreId,
                 dateArrivee: new Date(dateArrivee),
                 dateDepart: new Date(dateDepart),
                 nbPersonnes,
-                statut,
-                demandespe,
-                voyageurId: req.user.voyageurId,
-                chambreId: req.user.chambreId
+                statut: "en_attente",
+                demandeSpeciale: demandeSpeciale
             }
         });
-        res.status(201).json(reservation);
+        res.status(201).json(newReservation);
     }
     catch (e) {
         res.status(400).json({ erreur: e.message })
@@ -301,21 +309,21 @@ app.post('/reservations', valider(schemaReservation), async (req, res) => {
 })
 
 //-- Patch --//
-app.patch('/reservations/:id', async (req, res)=>{
+app.patch('/reservations/:id', exigeRole('hotelier'), async (req, res)=>{
     const id = parseInt(req.params.id);
-    const { dateArrivee, dateDepart, nbPersonnes, statut, demandespe } = req.body;
+    const { dateArrivee, dateDepart, nbPersonnes, statut, demandeSpecial } = req.body;
 
     const reservations = await prisma.reservations.findUnique({ where: { id } });
     if (!reservations) {
         return res.status(404).json({ error: 'Réservation introuvable' });
     }
     if (transitionValide(reservations.statut, 'confirmee')) {
-        return res.status(403).json({ error: 'Accès refusé' });
+        return res.status(200).json({ error: 'Accès refusé' });
     }
 
     const updated = await prisma.reservations.update({
         where: { id },
-        data: { dateArrivee, dateDepart, nbPersonnes, statut, demandespe },
+        data: { dateArrivee, dateDepart, nbPersonnes, statut, demandeSpecial: demandeSpecial || null },
     });
 
     res.json(updated);
