@@ -90,11 +90,56 @@ function transitionValide(statutActuel, statutVoulu) {
 
 ////////////////////////////////////////////// Chambres  ////////////////////////////////////////////////////////////////////////////////////////
 
-//-- Get --//
-app.get('/chambres', valider(schemaGetChambre), async (req, res) => {
+//-↓- Get -↓-//
+
+/**
+ * @openapi
+ * /chambres:
+ *   get:
+ *     summary: Récupérer les chambres disponibles
+ *     tags: [Chambres]
+ *     parameters:
+ *       - in: query
+ *         name: date_debut
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date de début du séjour (AAAA-MM-JJ)
+ *       - in: query
+ *         name: date_fin
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date de fin du séjour (AAAA-MM-JJ)
+ *       - in: query
+ *         name: capacite
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Nombre de personnes minimum
+ *       - in: query
+ *         name: prix_max
+ *         required: false
+ *         schema:
+ *           type: number
+ *         description: Prix maximum par nuit
+ *     responses:
+ *       200:
+ *         description: Liste des chambres disponibles
+ *       400:
+ *         description: Paramètres invalides
+ *       401:
+ *         description: Jeton absent ou invalide
+ *       404:
+ *         description: Aucune chambre disponible
+ */
+
+app.get('/chambres', /*valider(schemaGetChambre),*/ async (req, res) => {
     try {
         const { hotel, date_debut, date_fin, capacite, prix_max, categorie } = req.query;
-        console.log('QUERY :', req.query);
         const filtre = {};
         if (hotel) filtre.hotelId = Number(hotel);
         if (capacite) filtre.capacite = { gte: Number(capacite) }; //gte = greater than or equal to
@@ -116,13 +161,8 @@ app.get('/chambres', valider(schemaGetChambre), async (req, res) => {
         }
         ///// ↑ /////  
 
-        if (date_debut && date_fin /*&& date_debut < date_fin*/) {
+        if (date_debut && date_fin && date_debut < date_fin) {
             filtre.reservation = {
-                /*none: {
-                    statut: "confirmee",
-                    dateArrivee: { gt: new Date(date_debut) }, //lt = less than -> plus petit que
-                    dateDepart: { lt: new Date(date_fin) } //gt = greater than -> plus grand que
-                },*/
                 none: {
                     statut: 'confirmee',
                     dateArrivee: { lt: new Date(date_fin) },
@@ -145,6 +185,29 @@ app.get('/chambres', valider(schemaGetChambre), async (req, res) => {
 });
 
 //-- Post --//
+
+/**
+* @openapi
+* /chambres:
+*   post:
+*       summary: Créer une chambre 
+*       tags: [Chambres]
+*       security: [{ bearerAuth: [] }]
+*       requestBody:
+*           required: true
+*           content:
+*               application/json:
+*                   schema:
+*                      type: object
+*                      required: [ numero, categorie, capacite, prixNuit, description, disponible ]
+*                      properties: { numero: { type : String}, categorie: { type : String}, capacite: { type : Number}, prixNuit: { type : Number}, description: { type : String}, disponible: { type : Boolean} }
+*       responses:
+*           200: { description: Le livre modifie }
+*           401: { description: Jeton absent ou invalide }
+*           403: { description: Ce livre ne vous appartient pas }
+*           404: { description: Aucun livre avec cet identifiant }
+* */
+
 app.post('/chambres', authentification, /*valider(schemaChambre),*/ exigeRole('hotelier'), async (req, res) => {
 
     const nouvelleChambre = await prisma.chambres.create({
@@ -163,6 +226,35 @@ app.post('/chambres', authentification, /*valider(schemaChambre),*/ exigeRole('h
 });
 
 //-- Patch --//
+
+/**
+* @openapi
+* /chambres:
+*   patch:
+*       summary: Mettre à jour une chambre
+*       tags: [Chambres]
+*       security: [{ bearerAuth: [] }]
+*       parameters:
+*           - name: id
+*             in: path
+*             required: true
+*             schema:
+*                 type: integer
+*       requestBody:
+*           required: true
+*           content:
+*               application/json:
+*                   schema:
+*                      type: object
+*                      required: [ numero, categorie, capacite, prixNuit, description, disponible ]
+*                      properties: { numero: { type : String}, categorie: { type : String}, capacite: { type : Number}, prixNuit: { type : Number}, description: { type : String}, disponible: { type : Boolean} }
+*       responses:
+*           200: { description: Le livre modifie }
+*           401: { description: Jeton absent ou invalide }
+*           403: { description: Ce livre ne vous appartient pas }
+*           404: { description: Aucun livre avec cet identifiant }
+* */
+
 app.patch('/chambres/:id', authentification, valider(schemaModifChambre), exigeRole('hotelier'), async (req, res) => {
     const id = parseInt(req.params.id);
     const { numero, categorie, capacite, prixNuit, description, disponible } = req.body;
@@ -184,6 +276,27 @@ app.patch('/chambres/:id', authentification, valider(schemaModifChambre), exigeR
 });
 
 //-- Delete --//
+
+/**
+* @openapi
+* /chambres:
+*   delete:
+*       summary: Supprimer une chambre
+*       tags: [Chambres]
+*       security: [{ bearerAuth: [] }]
+*       parameters:
+*           - name: id
+*             in: path
+*             required: true
+*             schema:
+*                 type: integer
+*       responses:
+*           204: { description: Chambre supprimée }
+*           401: { description: Jeton absent ou invalide }
+*           403: { description: Accès refusé }
+*           404: { description: Chambre non trouvée }
+* */
+
 app.delete('/chambres/:id', authentification, exigeRole('hotelier'), async (req, res) => {
     const id = parseInt(req.params.id);
 
@@ -201,7 +314,21 @@ app.delete('/chambres/:id', authentification, exigeRole('hotelier'), async (req,
 
 ////////////////////////////////////////////// Hotels ////////////////////////////////////////////////////////////////////////////////////////
 
-//-- Get --//
+//-↓- Get -↓-//
+
+/**
+* @openapi
+* /hotels:
+*   get:
+*       summary: Récupérer les hôtels
+*       tags: [Hotels]
+*       responses:
+*           200: { description: Liste des hôtels }
+*           401: { description: Jeton absent ou invalide }
+*           403: { description: Accès refusé }
+*           404: { description: Aucun hotel avec cet identifiant }
+* */
+
 app.get('/hotels', async (req, res) => {
     try {
         const hotels = await prisma.hotels.findMany({
@@ -213,6 +340,24 @@ app.get('/hotels', async (req, res) => {
     }
 });
 
+/**
+* @openapi
+* /hotels/{id}:
+*   get:
+*       summary: Récupérer les hotels disponibles par rapport a un numéro
+*       tags: [Hotels]
+*       parameters:
+*         - in: path
+*           name: id
+*           required: true
+*           schema: { type: integer }
+*       responses:
+*           200: { description: Le livre modifie }
+*           401: { description: Jeton absent ou invalide }
+*           403: { description: Ce livre ne vous appartient pas }
+*           404: { description: Aucun livre avec cet identifiant }
+* */
+
 app.get('/hotels/:id',async (req, res) => {
     const id = Number(req.params.id);
     const hotel = await prisma.hotels.findUnique({ where: { id } });
@@ -222,6 +367,23 @@ app.get('/hotels/:id',async (req, res) => {
     res.json(hotel);
 });
 
+/**
+* @openapi
+* /hotels/{id}/chambres:
+*   get:
+*       summary: Récupérer les chambres disponibles par rapport a un numéro et une chambre
+*       tags: [Hotels]
+*       parameters:
+*         - in: path
+*           name: id
+*           required: true
+*           schema: { type: integer }
+*       responses:
+*           200: { description: Le livre modifie }
+*           401: { description: Jeton absent ou invalide }
+*           403: { description: Ce livre ne vous appartient pas }
+*           404: { description: Aucun livre avec cet identifiant }
+* */
 app.get ('/hotels/:id/chambres', async (req, res) => {
     const id = Number(req.params.id);
     const chambres = await prisma.chambres.findMany({
@@ -236,7 +398,26 @@ app.get ('/hotels/:id/chambres', async (req, res) => {
 
 ////////////////////////////////////////////// Comptes  ////////////////////////////////////////////////////////////////////////////////////////
 
-//-- Get --//
+//-↓- Get -↓-//
+
+/**
+* @openapi
+* /comptes:
+*   get:
+*       summary: Récupérer les comptes disponibles
+*       tags: [Comptes]
+*       parameters:
+*         - in: path
+*           name: id
+*           required: true
+*           schema: { type: integer }
+*       responses:
+*           200: { description: Le livre modifie }
+*           401: { description: Jeton absent ou invalide }
+*           403: { description: Ce livre ne vous appartient pas }
+*           404: { description: Aucun livre avec cet identifiant }
+* */
+
 app.get('/comptes/:id', async (req, res) => {
     const id = Number(req.params.id);
     const compte = await prisma.comptes.findUnique({ where: { id } });
@@ -248,8 +429,20 @@ app.get('/comptes/:id', async (req, res) => {
 
 ////////////////////////////////////////////// Reservations  ////////////////////////////////////////////////////////////////////////////////////////
 
-//-- Get --//
+//-↓- Get -↓-//
 
+/**
+* @openapi
+* /reservations/mine:
+*   get:
+*       summary: Récupérer les réservations du voyageur connecté
+*       tags: [Reservations]
+*       responses:
+*           200: { description: Le livre modifie }
+*           401: { description: Jeton absent ou invalide }
+*           403: { description: Ce livre ne vous appartient pas }
+*           404: { description: Aucun livre avec cet identifiant }
+* */
 
 app.get('/reservations/mine', authentification, async (req, res) => {
     try{
@@ -262,6 +455,24 @@ app.get('/reservations/mine', authentification, async (req, res) => {
         res.status(400).json({ erreur: e.message })
     }
 })
+
+/**
+* @openapi
+* /reservations/received:
+*   get:
+*       summary: Récupérer les réservations reçues par un hotelier
+*       tags: [Reservations]
+*       parameters:
+*         - in: path
+*           name: id
+*           required: true
+*           schema: { type: integer }
+*       responses:
+*           200: { description: Le livre modifie }
+*           401: { description: Jeton absent ou invalide }
+*           403: { description: Ce livre ne vous appartient pas }
+*           404: { description: Aucun livre avec cet identifiant }
+* */
 
 app.get('/reservations/received', authentification, exigeRole('hotelier'), async (req,res) => {
     try {
@@ -276,6 +487,24 @@ app.get('/reservations/received', authentification, exigeRole('hotelier'), async
     }
 })
 
+/**
+* @openapi
+* /reservations/:id:
+*   get:
+*       summary: Récupérer les réservations par rapport a un numéro
+*       tags: [Reservations]
+*       parameters:
+*         - in: path
+*           name: id
+*           required: true
+*           schema: { type: integer }
+*       responses:
+*           200: { description: Le livre modifie }
+*           401: { description: Jeton absent ou invalide }
+*           403: { description: Ce livre ne vous appartient pas }
+*           404: { description: Aucun livre avec cet identifiant }
+* */
+
 app.get('/reservations/:id', valider(schemaReservation), async (req, res) => {
     const id = Number(req.params.id);
     const reservation = await prisma.reservations.findUnique({ where: { id } });
@@ -286,6 +515,29 @@ app.get('/reservations/:id', valider(schemaReservation), async (req, res) => {
 });
 
 //-- Post --//
+
+/**
+* @openapi
+* /reservation:
+*   post:
+*       summary: Créer une nouvelle réservation
+*       tags: [Reservations]
+*       security: [{ bearerAuth: [] }]
+*       requestBody:
+*          required: true
+*          content:
+*             application/json:
+*                schema:
+*                    type: object
+*                    required: [ chambreId, dateArrivee, dateDepart, nbPersonnes ]
+*                    properties: { chambreId: { type : Number}, dateArrivee: { type : String, format: date}, dateDepart: { type : String, format: date}, nbPersonnes: { type : Number}, demandeSpeciale: { type : String} }
+*       responses:
+*           200: { description: Le livre modifie }
+*           401: { description: Jeton absent ou invalide }
+*           403: { description: Ce livre ne vous appartient pas }
+*           404: { description: Aucun livre avec cet identifiant }
+* */
+
 app.post('/reservation', authentification, valider(schemaReservation), async (req, res) => {
     try {
         const {chambreId, dateArrivee, dateDepart, nbPersonnes, demandeSpeciale} = req.body;
@@ -309,6 +561,29 @@ app.post('/reservation', authentification, valider(schemaReservation), async (re
 })
 
 //-- Patch --//
+
+/**
+* @openapi
+* /reservation/:id:
+*   patch:
+*       summary: Mettre à jour une réservation existante
+*       tags: [Reservations]
+*       security: [{ bearerAuth: [] }]
+*       requestBody:
+*           required: true
+*           content:
+*              application/json:
+*                 schema:
+*                    type: object
+*                    required: [ chambreId, dateArrivee, dateDepart, nbPersonnes ]
+*                    properties: { chambreId: { type : Number}, dateArrivee: { type : String, format: date}, dateDepart: { type : String, format: date}, nbPersonnes: { type : Number}, demandeSpeciale: { type : String} }
+*       responses:
+*           200: { description: Le livre modifie }
+*           401: { description: Jeton absent ou invalide }
+*           403: { description: Ce livre ne vous appartient pas }
+*           404: { description: Aucun livre avec cet identifiant }
+* */
+
 app.patch('/reservations/:id', exigeRole('hotelier'), async (req, res)=>{
     const id = parseInt(req.params.id);
     const { dateArrivee, dateDepart, nbPersonnes, statut, demandeSpecial } = req.body;
@@ -330,6 +605,27 @@ app.patch('/reservations/:id', exigeRole('hotelier'), async (req, res)=>{
 })
 
 //-- Delete --//
+
+/**
+* @openapi
+* /reservations/:id:
+*   delete:
+*       summary: Supprimer une réservation
+*       tags: [Reservations]
+*       security: [{ bearerAuth: [] }]
+*       parameters:
+*           - name: id
+*             in: path
+*             required: true
+*             schema:
+*                 type: integer
+*       responses:
+*           204: { description: Réservation supprimée }
+*           401: { description: Jeton absent ou invalide }
+*           403: { description: Accès refusé }
+*           404: { description: Réservation non trouvée }
+* */
+
 app.delete('/reservations/:id', async (req, res) =>{
     try{
         const id = parseInt(req.params.id);
@@ -342,7 +638,21 @@ app.delete('/reservations/:id', async (req, res) =>{
 
 ////////////////////////////////////////////// Voyageurs  ////////////////////////////////////////////////////////////////////////////////////////
 
-//-- Get --//
+//-↓- Get -↓-//
+
+/**
+* @openapi
+* /voyageur/me:
+*   get:
+*       summary: Récupérer les informations du voyageur
+*       tags: [Voyageurs]
+*       security: [{ bearerAuth: [] }]
+*       responses:
+*           200: { description: Informations du voyageur }
+*           401: { description: Jeton absent ou invalide }
+*           404: { description: Voyageur non trouvé }
+* */
+
 app.get('/voyageur/me', authentification, exigeRole('voyageur'), async (req, res) => {
     const voyageur = await prisma.comptes.findUnique({ where: { id: req.user.id } });
     if (!voyageur) {
@@ -350,6 +660,30 @@ app.get('/voyageur/me', authentification, exigeRole('voyageur'), async (req, res
     }
     res.json({ nom: voyageur.nom, prenom: voyageur.prenom, telephone: voyageur.telephone });
 });
+
+//-- Patch --//
+
+/**
+* @openapi
+* /voyageur/me:
+*   patch:
+*       summary: Mettre à jour les informations du voyageur
+*       tags: [Voyageurs]
+*       security: [{ bearerAuth: [] }]
+*       requestBody:
+*           required: true
+*           content:
+*              application/json:
+*                 schema:
+*                    type: object
+*                    required: [ nom, prenom, telephone ]
+*                    properties: { nom: { type : String}, prenom: { type : String}, telephone: { type : String} }
+*       responses:
+*           200: { description: Les informations du voyageur ont été mises à jour }
+*           401: { description: Jeton absent ou invalide }
+*           403: { description: Ces informations ne vous appartiennent pas }
+*           404: { description: Voyageur non trouvé }
+* */
 
 app.patch('/voyageur/me', authentification, valider(schemaModifCompte), exigeRole('voyageur'), async (req, res) => {
     const { nom, prenom, telephone } = req.body;
@@ -365,6 +699,27 @@ app.patch('/voyageur/me', authentification, valider(schemaModifCompte), exigeRol
 
 ////////////////////////////////////////////// Authentification (création, connexion et deconnexion)  ////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+* @openapi
+* /auth/register:
+*   post:
+*       summary: Créer une nouvelle réservation
+*       tags: [Connexion]
+*       requestBody:
+*          required: true
+*          content:
+*             application/json:
+*                schema:
+*                    type: object
+*                    required: [ email, motDePasseClaire, nom, prenom, telephone, note ]
+*                    properties: { email: { type : String}, motDePasseClaire: { type : String}, nom: { type : String}, prenom: { type : String}, telephone: { type : String}, note: { type : String} }
+*       responses:
+*           200: { description: Compte créé avec succès }
+*           401: { description: Jeton absent ou invalide }
+*           403: { description: Accès refusé }
+*           404: { description: Aucun livre avec cet identifiant }
+* */
+
 app.post('/auth/register', valider(schemaInscription), async (req, res) => {
     const {email, motDePasseClaire, nom, prenom, telephone, note } = req.body;
     const hashMDP = await bcrypt.hash(motDePasseClaire, 10);
@@ -375,6 +730,27 @@ app.post('/auth/register', valider(schemaInscription), async (req, res) => {
 
     res.status(201).json({ message: 'Compte créé avec succès' });    
 });
+
+/**
+* @openapi
+* /auth/login:
+*   post:
+*       summary: Se connecter au système
+*       tags: [Connexion]
+*       requestBody:
+*          required: true
+*          content:
+*             application/json:
+*                schema:
+*                    type: object
+*                    required: [ email, motDePasseClaire ]
+*                    properties: { email: { type : String}, motDePasseClaire: { type : String} }
+*       responses:
+*           200: { description: Connexion réussie }
+*           401: { description: Jeton absent ou invalide }
+*           403: { description: Accès refusé }
+*           404: { description: Aucun livre avec cet identifiant }
+* */
 
 app.post('/auth/login', valider(schemaConnexion), async (req, res) => {
     const { email, motDePasseClaire } = req.body;
@@ -388,6 +764,21 @@ app.post('/auth/login', valider(schemaConnexion), async (req, res) => {
 
     res.json({ token });
 });
+
+/**
+* @openapi
+* /auth/logout:
+*   post:
+*       summary: Se déconnecter du système
+*       tags: [Connexion]
+*       security: [{ bearerAuth: [] }]
+*       responses:
+*           200: { description: Compte créé avec succès }
+*           204: { description: Déconnexion réussie }
+*           401: { description: Jeton absent ou invalide }
+*           403: { description: Accès refusé }
+*           404: { description: Aucun livre avec cet identifiant }
+* */
 
 app.post('/auth/logout', authentification, (req, res) => {  //// mettre le token généré pendant la connexion dans le header (sur postman) pour pouvoir se déconnecter
     res.status(204).json({ message: 'Déconnexion réussie' });
