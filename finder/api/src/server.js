@@ -437,6 +437,7 @@ app.get('/comptes/:id', async (req, res) => {
 *   get:
 *       summary: Récupérer les réservations du voyageur connecté
 *       tags: [Reservations]
+*       security: [{ bearerAuth: [] }]
 *       responses:
 *           200: { description: Le livre modifie }
 *           401: { description: Jeton absent ou invalide }
@@ -462,6 +463,7 @@ app.get('/reservations/mine', authentification, async (req, res) => {
 *   get:
 *       summary: Récupérer les réservations reçues par un hotelier
 *       tags: [Reservations]
+*       security: [{ bearerAuth: [] }]
 *       parameters:
 *         - in: path
 *           name: id
