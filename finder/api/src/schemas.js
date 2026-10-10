@@ -15,23 +15,30 @@ export const schemaConnexion = z.object({
 });
 
 export const schemaModifCompte = schemaInscription.partial();
-export const schemaChambre = z.object({
+
+//////////////////// Chambres ////////////////////
+
+export const schemaCreateChambre = z.object({
+    hotelId: z.number().int().positive(),
     numero: z.string(),
     categorie: z.string(),
     capacite: z.number().int().positive(),
     prixNuit: z.number().int().positive(),
     description: z.string().optional(),
-    disponible: z.boolean()
 });
 
 export const schemaGetChambre = z.object({
-    categorie: z.enum(['simple', 'double', 'suite', 'luxe']).optional(),
+    hotelId: z.number().int().positive().optional(),
+    categorie: z.enum(['double', 'familiale', 'suite', 'simple']).optional(),
     capacite: z.coerce.number().int().positive().optional(),
-    prixMax: z.coerce.number().int().positive().optional()
+    prixNuit: z.coerce.number().int().positive().optional(),
+    description: z.string().optional(),
+    disponible: z.boolean().optional()
 });
 
-export const schemaModifChambre = schemaChambre.partial();
+export const schemaModifChambre = schemaCreateChambre.partial();
 
+//////////////////// Reservations ////////////////////
 
 export const schemaReservation = z.object({
     chambreId: z.number().int().positive(),
@@ -46,6 +53,8 @@ const schemaProfil = z.object({
     bio: z.string().max(500),
     ville: z.string().min(1),
 });
+
+//////////////////// Profil ////////////////////
 
 export const schemaModifProfil = schemaProfil
   .partial()

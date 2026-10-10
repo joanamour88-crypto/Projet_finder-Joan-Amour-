@@ -7,7 +7,7 @@ import bcrypt from 'bcrypt';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import { PrismaClient } from '../src/generated/prisma/client.ts';
-import { schemaInscription, schemaConnexion, schemaModifCompte, schemaChambre, schemaGetChambre, schemaModifChambre, schemaReservation } from '../src/schemas.js';
+import { schemaInscription, schemaConnexion, schemaModifCompte, schemaCreateChambre, schemaGetChambre, schemaModifChambre, schemaReservation } from '../src/schemas.js';
 
 /*const spec = swaggerJsdoc({
     definition: { openapi: '3.0.0', info: { title: 'Finder API', version: '1.0.0' } }, 
@@ -57,7 +57,7 @@ export function valider(schema) {
 ////////////////////////////////////////////// Fonction d'authentification /////////////////////////////////////////////////////////////////
 
 function authentification(req, res, next) {
-    const entete =req.headers.authorization || '';
+    const entete = req.headers.authorization || "";
     const token = entete.replace('Bearer ', ''); /// .replace() -> permet de remplacer 'Bearer ' par le token
     try {
         req.user = jwt.verify(token, process.env.JWT_SECRET);
@@ -77,11 +77,10 @@ function exigeRole(...role){
 ////////////////////////////////////////////// Fonction d'autorisation de transition /////////////////////////////////////////////////////////////////
 
 const TRANSITIONS_AUTORISEES = {
-demande: ['accepte', 'refuse'],
-accepte: ['rendu', 'annule'],
-refuse: [],
-rendu: [],
-annule: []
+    en_attente: ["confirmee", "annulee", "refusee"],
+    confirmee: ["annulee"],
+    annulee: ["en_attente"],
+    refusee: [],
 };
 
 function transitionValide(statutActuel, statutVoulu) {
@@ -137,7 +136,7 @@ function transitionValide(statutActuel, statutVoulu) {
  *         description: Aucune chambre disponible
  */
 
-app.get('/chambres', /*valider(schemaGetChambre),*/ async (req, res) => {
+app.get('/chambres', valider(schemaGetChambre), async (req, res) => {
     try {
         const { hotel, date_debut, date_fin, capacite, prix_max, categorie } = req.query;
         const filtre = {};
@@ -208,7 +207,7 @@ app.get('/chambres', /*valider(schemaGetChambre),*/ async (req, res) => {
 *           404: { description: Aucun livre avec cet identifiant }
 * */
 
-app.post('/chambres', authentification, /*valider(schemaChambre),*/ exigeRole('hotelier'), async (req, res) => {
+app.post('/chambres', authentification, valider(schemaCreateChambre), exigeRole('hotelier'), async (req, res) => {
 
     const nouvelleChambre = await prisma.chambres.create({
         data: {
@@ -335,7 +334,8 @@ app.get('/hotels', async (req, res) => {
             orderBy: { id: 'asc' }
         });
         res.json(hotels);
-    } catch (error) {
+    } 
+    catch (error) {
         res.status(500).json({ error: "Erreur lors de la récupération des hôtels" });
     }
 });
@@ -538,7 +538,7 @@ app.get('/reservations/:id', valider(schemaReservation), async (req, res) => {
 *           404: { description: Aucun livre avec cet identifiant }
 * */
 
-app.post('/reservation', authentification, valider(schemaReservation), async (req, res) => {
+app.post('/reservation', authentification, exigeRole('voyageur'), valider(schemaReservation), async (req, res) => {
     try {
         const {chambreId, dateArrivee, dateDepart, nbPersonnes, demandeSpeciale} = req.body;
 
@@ -584,24 +584,36 @@ app.post('/reservation', authentification, valider(schemaReservation), async (re
 *           404: { description: Aucun livre avec cet identifiant }
 * */
 
-app.patch('/reservations/:id', exigeRole('hotelier'), async (req, res)=>{
-    const id = parseInt(req.params.id);
+app.patch('/reservations/:id', authentification, exigeRole('hotelier'), async (req, res)=>{
+    //const id = parseInt(req.params.id);
     const { dateArrivee, dateDepart, nbPersonnes, statut, demandeSpecial } = req.body;
 
-    const reservations = await prisma.reservations.findUnique({ where: { id } });
+    const reservations = await prisma.reservations.findUnique({ 
+        where: { id : Number(req.params.id) },
+        include: { chambre: true },
+    });
     if (!reservations) {
         return res.status(404).json({ error: 'Réservation introuvable' });
     }
-    if (transitionValide(reservations.statut, 'confirmee')) {
-        return res.status(200).json({ error: 'Accès refusé' });
+    if (reservations.voyageurId !== req.user.id) {
+        return res.status(403).json({ error: 'Interdiction/Acces refuser' });
+    }
+    if (!transitionValide(reservations.statut, req.body.statut)) {
+        return res.status(402).json({ error: `Passage de ${reservations.statut} à ${req.body.statut} interdit` });
     }
 
     const updated = await prisma.reservations.update({
-        where: { id },
-        data: { dateArrivee, dateDepart, nbPersonnes, statut, demandeSpecial: demandeSpecial || null },
+        where: { id : Number(req.params.id) },
+        data: { 
+            dateArrivee: new Date(dateArrivee),
+            dateDepart: new Date(dateDepart),
+            nbPersonnes,
+            statut,
+            demandeSpeciale: demandeSpecial || null
+        },
     });
 
-    res.json(updated);
+    res.status(200).json(updated);
 })
 
 //-- Delete --//
@@ -626,13 +638,25 @@ app.patch('/reservations/:id', exigeRole('hotelier'), async (req, res)=>{
 *           404: { description: Réservation non trouvée }
 * */
 
-app.delete('/reservations/:id', async (req, res) =>{
+app.delete('/reservations/:id', authentification, exigeRole('voyageur'), async (req, res) =>{
     try{
-        const id = parseInt(req.params.id);
-        await prisma.reservations.delete({ where: { id }})
-        res.status(204).send();
-    } catch {
-        res.status(404).json({ erreur: 'reservation inexistante'})
+        //const id = parseInt(req.params.id);
+        const reservations = await prisma.reservations.findUnique({ 
+            where: { id : Number(req.params.id) },
+        });  
+        if (!reservations) {
+            return res.status(404).json({ error: 'Réservation non trouvée' });
+        }
+        if (reservations.voyageurId !== req.user.id) {
+            return res.status(403).json({ error: 'Interdiction/Acces refuser' });
+        }
+        if (!transitionValide(reservations.statut, 'annulee')) {
+            return res.status(402).json({ error: `Passage de ${reservations.statut} à ${req.body.statut} interdit` });
+        }
+        await prisma.reservations.update({ where: { id: Number(req.params.id) }, data: { statut: 'annulee' } });
+        res.status(204).send().json({ message: 'Réservation annulée' });
+    } catch (e) {
+        res.status(404).json({ erreur: e.message})
     }
 })
 
@@ -762,7 +786,7 @@ app.post('/auth/login', valider(schemaConnexion), async (req, res) => {
 
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role, hotelId: user.hotelId }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
-    res.json({ token });
+    res.json({'connection reussie' : token });
 });
 
 /**
@@ -781,7 +805,7 @@ app.post('/auth/login', valider(schemaConnexion), async (req, res) => {
 * */
 
 app.post('/auth/logout', authentification, (req, res) => {  //// mettre le token généré pendant la connexion dans le header (sur postman) pour pouvoir se déconnecter
-    res.status(204).json({ message: 'Déconnexion réussie' });
+    res.status(200).json({ message: 'Déconnexion réussie' });
 });
 
 ////////////////////////////////////////////// PORT ////////////////////////////////////////////////////////////////////////////////////////
