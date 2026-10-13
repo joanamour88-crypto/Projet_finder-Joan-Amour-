@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1791929202396" clover="3.2.0">
+  <project timestamp="1791929202396" name="All files">
+    <metrics statements="182" coveredstatements="102" conditionals="66" coveredconditionals="24" methods="27" coveredmethods="15" elements="275" coveredelements="141" complexity="0" loc="182" ncloc="182" packages="2" files="9" classes="9"/>
+    <package name="src">
+      <metrics statements="44" coveredstatements="39" conditionals="10" coveredconditionals="5" methods="10" coveredmethods="7"/>
+      <file name="app.js" path="C:\Users\Proprietaire\Documents\Projet_finder-Joan-Amour-\finder\api\src\app.js">
+        <metrics statements="13" coveredstatements="11" conditionals="2" coveredconditionals="0" methods="2" coveredmethods="0"/>
+        <line num="15" count="3" type="stmt"/>
+        <line num="16" count="3" type="stmt"/>
+        <line num="18" count="3" type="stmt"/>
+        <line num="19" count="3" type="stmt"/>
+        <line num="20" count="3" type="stmt"/>
+        <line num="21" count="3" type="stmt"/>
+        <line num="22" count="3" type="stmt"/>
+        <line num="24" count="3" type="stmt"/>
+        <line num="33" count="3" type="stmt"/>
+        <line num="36" count="3" type="stmt"/>
+        <line num="37" count="0" type="stmt"/>
+        <line num="43" count="3" type="stmt"/>
+        <line num="51" count="0" type="cond" truecount="0" falsecount="2"/>
+      </file>
+      <file name="middlewares.js" path="C:\Users\Proprietaire\Documents\Projet_finder-Joan-Amour-\finder\api\src\middlewares.js">
+        <metrics statements="20" coveredstatements="18" conditionals="8" coveredconditionals="5" methods="7" coveredmethods="7"/>
+        <line num="6" count="18" type="stmt"/>
+        <line num="7" count="3" type="stmt"/>
+        <line num="8" count="3" type="cond" truecount="1" falsecount="1"/>
+        <line num="9" count="0" type="stmt"/>
+        <line num="11" count="3" type="stmt"/>
+        <line num="12" count="3" type="stmt"/>
+        <line num="17" count="3" type="stmt"/>
+        <line num="18" count="6" type="stmt"/>
+        <line num="19" count="6" type="cond" truecount="2" falsecount="0"/>
+        <line num="20" count="1" type="stmt"/>
+        <line num="22" count="5" type="stmt"/>
+        <line num="23" count="5" type="stmt"/>
+        <line num="29" count="6" type="cond" truecount="1" falsecount="1"/>
+        <line num="30" count="6" type="stmt"/>
+        <line num="31" count="6" type="stmt"/>
+        <line num="32" count="6" type="stmt"/>
+        <line num="33" count="6" type="stmt"/>
+        <line num="35" count="0" type="stmt"/>
+        <line num="42" count="27" type="stmt"/>
+        <line num="43" count="5" type="cond" truecount="1" falsecount="1"/>
+      </file>
+      <file name="prisma.js" path="C:\Users\Proprietaire\Documents\Projet_finder-Joan-Amour-\finder\api\src\prisma.js">
+        <metrics statements="1" coveredstatements="1" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+        <line num="2" count="3" type="stmt"/>
+      </file>
+      <file name="schemas.js" path="C:\Users\Proprietaire\Documents\Projet_finder-Joan-Amour-\finder\api\src\schemas.js">
+        <metrics statements="10" coveredstatements="9" conditionals="0" coveredconditionals="0" methods="1" coveredmethods="0"/>
+        <line num="3" count="3" type="stmt"/>
+        <line num="12" count="3" type="stmt"/>
+        <line num="17" count="3" type="stmt"/>
+        <line num="21" count="3" type="stmt"/>
+        <line num="30" count="3" type="stmt"/>
+        <line num="39" count="3" type="stmt"/>
+        <line num="43" count="3" type="stmt"/>
+        <line num="51" count="3" type="stmt"/>
+        <line num="59" count="3" type="stmt"/>
+        <line num="61" count="0" type="stmt"/>
+      </file>
+    </package>
+    <package name="src.routes">
+      <metrics statements="138" coveredstatements="63" conditionals="56" coveredconditionals="19" methods="17" coveredmethods="8"/>
+      <file name="auth.js" path="C:\Users\Proprietaire\Documents\Projet_finder-Joan-Amour-\finder\api\src\routes\auth.js">
+        <metrics statements="22" coveredstatements="10" conditionals="4" coveredconditionals="3" methods="3" coveredmethods="1"/>
+        <line num="8" count="3" type="stmt"/>
+        <line num="33" count="3" type="stmt"/>
+        <line num="34" count="0" type="stmt"/>
+        <line num="35" count="0" type="stmt"/>
+        <line num="36" count="0" type="stmt"/>
+        <line num="41" count="0" type="stmt"/>
+        <line num="65" count="3" type="stmt"/>
+        <line num="66" count="1" type="stmt"/>
+        <line num="67" count="1" type="stmt"/>
+        <line num="69" count="1" type="stmt"/>
+        <line num="70" count="1" type="cond" truecount="3" falsecount="1"/>
+        <line num="71" count="0" type="stmt"/>
+        <line num="74" count="1" type="stmt"/>
+        <line num="76" count="1" type="stmt"/>
+        <line num="78" count="0" type="stmt"/>
+        <line num="79" count="0" type="stmt"/>
+        <line num="80" count="0" type="stmt"/>
+        <line num="81" count="0" type="stmt"/>
+        <line num="82" count="0" type="stmt"/>
+        <line num="84" count="0" type="stmt"/>
+        <line num="105" count="3" type="stmt"/>
+        <line num="106" count="0" type="stmt"/>
+      </file>
+      <file name="chambres.js" path="C:\Users\Proprietaire\Documents\Projet_finder-Joan-Amour-\finder\api\src\routes\chambres.js">
+        <metrics statements="38" coveredstatements="29" conditionals="24" coveredconditionals="15" methods="4" coveredmethods="4"/>
+        <line num="7" count="3" type="stmt"/>
+        <line num="58" count="3" type="stmt"/>
+        <line num="59" count="5" type="stmt"/>
+        <line num="60" count="5" type="stmt"/>
+        <line num="61" count="5" type="stmt"/>
+        <line num="62" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="63" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="64" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="65" count="5" type="cond" truecount="2" falsecount="0"/>
+        <line num="84" count="5" type="cond" truecount="2" falsecount="3"/>
+        <line num="85" count="0" type="stmt"/>
+        <line num="92" count="5" type="cond" truecount="2" falsecount="3"/>
+        <line num="93" count="0" type="stmt"/>
+        <line num="96" count="5" type="stmt"/>
+        <line num="99" count="0" type="stmt"/>
+        <line num="100" count="0" type="stmt"/>
+        <line num="129" count="3" type="stmt"/>
+        <line num="131" count="1" type="stmt"/>
+        <line num="143" count="1" type="stmt"/>
+        <line num="176" count="3" type="stmt"/>
+        <line num="177" count="1" type="stmt"/>
+        <line num="178" count="1" type="stmt"/>
+        <line num="179" count="1" type="stmt"/>
+        <line num="181" count="1" type="stmt"/>
+        <line num="182" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="183" count="0" type="stmt"/>
+        <line num="185" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="186" count="1" type="stmt"/>
+        <line num="189" count="0" type="stmt"/>
+        <line num="194" count="0" type="stmt"/>
+        <line num="197" count="0" type="stmt"/>
+        <line num="223" count="3" type="stmt"/>
+        <line num="224" count="1" type="stmt"/>
+        <line num="226" count="1" type="stmt"/>
+        <line num="227" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="228" count="0" type="stmt"/>
+        <line num="234" count="1" type="stmt"/>
+        <line num="235" count="1" type="stmt"/>
+      </file>
+      <file name="hotels.js" path="C:\Users\Proprietaire\Documents\Projet_finder-Joan-Amour-\finder\api\src\routes\hotels.js">
+        <metrics statements="18" coveredstatements="4" conditionals="4" coveredconditionals="0" methods="3" coveredmethods="0"/>
+        <line num="4" count="3" type="stmt"/>
+        <line num="23" count="3" type="stmt"/>
+        <line num="24" count="0" type="stmt"/>
+        <line num="25" count="0" type="stmt"/>
+        <line num="28" count="0" type="stmt"/>
+        <line num="31" count="0" type="stmt"/>
+        <line num="53" count="3" type="stmt"/>
+        <line num="54" count="0" type="stmt"/>
+        <line num="55" count="0" type="stmt"/>
+        <line num="56" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="57" count="0" type="stmt"/>
+        <line num="59" count="0" type="stmt"/>
+        <line num="79" count="3" type="stmt"/>
+        <line num="80" count="0" type="stmt"/>
+        <line num="81" count="0" type="stmt"/>
+        <line num="85" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="86" count="0" type="stmt"/>
+        <line num="88" count="0" type="stmt"/>
+      </file>
+      <file name="reservations.js" path="C:\Users\Proprietaire\Documents\Projet_finder-Joan-Amour-\finder\api\src\routes\reservations.js">
+        <metrics statements="48" coveredstatements="17" conditionals="20" coveredconditionals="1" methods="5" coveredmethods="3"/>
+        <line num="6" count="3" type="stmt"/>
+        <line num="26" count="3" type="stmt"/>
+        <line num="27" count="1" type="stmt"/>
+        <line num="28" count="1" type="stmt"/>
+        <line num="31" count="1" type="stmt"/>
+        <line num="34" count="0" type="stmt"/>
+        <line num="57" count="3" type="stmt"/>
+        <line num="58" count="1" type="stmt"/>
+        <line num="59" count="1" type="stmt"/>
+        <line num="63" count="1" type="stmt"/>
+        <line num="66" count="0" type="stmt"/>
+        <line num="94" count="3" type="stmt"/>
+        <line num="95" count="0" type="stmt"/>
+        <line num="96" count="0" type="stmt"/>
+        <line num="98" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="99" count="0" type="stmt"/>
+        <line num="101" count="0" type="stmt"/>
+        <line num="112" count="0" type="stmt"/>
+        <line num="117" count="0" type="stmt"/>
+        <line num="151" count="3" type="stmt"/>
+        <line num="152" count="1" type="stmt"/>
+        <line num="154" count="1" type="stmt"/>
+        <line num="156" count="1" type="stmt"/>
+        <line num="160" count="1" type="cond" truecount="1" falsecount="1"/>
+        <line num="161" count="1" type="stmt"/>
+        <line num="163" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="164" count="0" type="stmt"/>
+        <line num="166" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="167" count="0" type="stmt"/>
+        <line num="170" count="0" type="stmt"/>
+        <line num="181" count="0" type="stmt"/>
+        <line num="184" count="0" type="stmt"/>
+        <line num="210" count="3" type="stmt"/>
+        <line num="211" count="0" type="stmt"/>
+        <line num="212" count="0" type="stmt"/>
+        <line num="213" count="0" type="cond" truecount="0" falsecount="4"/>
+        <line num="214" count="0" type="stmt"/>
+        <line num="217" count="0" type="stmt"/>
+        <line num="218" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="219" count="0" type="stmt"/>
+        <line num="221" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="222" count="0" type="stmt"/>
+        <line num="224" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="225" count="0" type="stmt"/>
+        <line num="228" count="0" type="stmt"/>
+        <line num="229" count="0" type="stmt"/>
+        <line num="231" count="0" type="stmt"/>
+        <line num="232" count="0" type="stmt"/>
+      </file>
+      <file name="voyageur.js" path="C:\Users\Proprietaire\Documents\Projet_finder-Joan-Amour-\finder\api\src\routes\voyageur.js">
+        <metrics statements="12" coveredstatements="3" conditionals="4" coveredconditionals="0" methods="2" coveredmethods="0"/>
+        <line num="7" count="3" type="stmt"/>
+        <line num="26" count="3" type="stmt"/>
+        <line num="27" count="0" type="stmt"/>
+        <line num="28" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="29" count="0" type="stmt"/>
+        <line num="31" count="0" type="stmt"/>
+        <line num="58" count="3" type="stmt"/>
+        <line num="59" count="0" type="stmt"/>
+        <line num="60" count="0" type="stmt"/>
+        <line num="64" count="0" type="cond" truecount="0" falsecount="2"/>
+        <line num="65" count="0" type="stmt"/>
+        <line num="67" count="0" type="stmt"/>
+      </file>
+    </package>
+  </project>
+</coverage>

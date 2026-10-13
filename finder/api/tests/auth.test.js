@@ -12,7 +12,7 @@ describe('Post /login', () => {
         vi.spyOn(prisma.comptes, 'findUnique').mockResolvedValue({
             id: 5,
             email: 'leJ@example.com',
-            motDePasseClaire: await bcrypt.hash('password5555', 4), // hash du mot de passe envoyé
+            motDePasseClaire: await bcrypt.hash('password5555', 4),
             role: 'voyageur',
             hotelId: null
         });
@@ -34,5 +34,5 @@ describe('Post /login', () => {
         expect(contenu.id).toBe(5);
         expect(contenu.role).toBe('voyageur');
     });
-    
+
 });
