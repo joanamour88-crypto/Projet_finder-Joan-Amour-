@@ -1,19 +1,18 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import express from 'express';
+import prisma from './prisma.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import 'dotenv/config'; /// normalement utiliser par server.js mais je l'ai mis ici pour que le test vitest fonctionne
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
-import { PrismaClient } from '../src/generated/prisma/client.ts';
+//import { PrismaClient } from '../src/generated/prisma/client.ts';
 import { schemaInscription, schemaConnexion, schemaModifCompte, schemaCreateChambre, schemaGetChambre, schemaModifChambre, schemaReservation } from '../src/schemas.js';
 
 
-const prisma = new PrismaClient();
+//const prisma = new PrismaClient();
 //app.use
-
-const chambres = JSON.parse(readFileSync(path.join(import.meta.dirname, '..', 'finder-data', 'chambres.json'), 'utf8'));
-const hotels = JSON.parse(readFileSync(path.join(import.meta.dirname, '..', 'finder-data', 'hotels.json'), 'utf8'));
 
 //const express = require("express");
 const app = express();
@@ -145,8 +144,8 @@ app.get('/chambres', validerQuery(schemaGetChambre), async (req, res) => {
         const { hotel, date_debut, date_fin, capacite, prix_max, categorie } = req.validatedQuery;
         const filtre = {};
         if (hotel) filtre.hotelId = Number(hotel);
-        if (capacite) filtre.capacite = { gte: Number(capacite) }; //gte = greater than or equal to
-        if (prix_max) filtre.prixNuit = prix_max !== undefined && { lte: Number(prix_max) }; //lte = less than or equal to
+        if (capacite) filtre.capacite = Number(capacite); //gte = greater than or equal to
+        if (prix_max) filtre.prixNuit = { lte: Number(prix_max) }; //lte = less than or equal to
         if (categorie) filtre.categorie = categorie;
 
         ///// Permet d'envoyer une erreur 400 si prix_max n'est pas un nombre ou est vide ///////////////////////////////////////////////
@@ -154,14 +153,16 @@ app.get('/chambres', validerQuery(schemaGetChambre), async (req, res) => {
         ///// 'typeof' -> permet de vérifier le type de la variable 'prix_max' pour s'assurer qu'il s'agit d'une chaîne de caractères. donc que se soit un Int, un float ou un string
         ///// 'trim()' -> permet de supprimer les espaces vides au début et à la fin de la chaîne de caractères. donc si l'utilisateur envoie un string vide, il sera considéré comme invalide
         ///// 'Number.isFinite()' -> permet de vérifier si la valeur convertie en nombre est un nombre fini. donc si l'utilisateur envoie un string qui ne peut pas être converti en nombre, il sera considéré comme invalide
-        ///// ↓ /////
-        if (prix_max !== undefined) {
+        ///// ↓ ///// → marche pas ←
+        /*if (prix_max !== undefined) {
+            filtre.prixNuit = { lte: Number(prix_max) }; //lte = less than or equal to
+        }else {
             const prixMax = Number(prix_max);
 
             if (typeof prix_max !== 'string' || prix_max.trim() === '' || !Number.isFinite(prixMax)) {
                 return res.status(400).json({ error: "Erreur sur le prix : prix_max doit être un nombre" });
             }
-        }
+        }*/
         ///// ↑ /////  
 
         if (date_debut && date_fin && date_debut < date_fin) {
@@ -779,16 +780,28 @@ app.post('/auth/register', validerBody(schemaInscription), async (req, res) => {
 * */
 
 app.post('/auth/login', validerBody(schemaConnexion), async (req, res) => {
-    const { email, motDePasseClaire } = req.body;
+    try {
+        const { email, motDePasseClaire } = req.body;
 
-    const user = await prisma.comptes.findFirst({ where: { email } });
-    if (!user || !(await bcrypt.compare(motDePasseClaire, user.motDePasseClaire))) {
-        return res.status(401).json({ error: 'Identifiants invalides' });
-    };
+        const user = await prisma.comptes.findUnique({ where: { email } });
+        if (!user || !(await bcrypt.compare(motDePasseClaire, user.motDePasseClaire))) {
+            return res.status(401).json({ error: 'Identifiants invalides' });
+        };
 
-    const token = jwt.sign({ id: user.id, email: user.email, role: user.role, hotelId: user.hotelId }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign({ id: user.id, email: user.email, role: user.role, hotelId: user.hotelId }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
-    res.json({'connection reussie' : token });
+        res.status(200).json({message: 'Connection réussie', token });
+    } catch (erreur) {
+        console.error('========== ERREUR LOGIN ==========');
+        console.error('Type :', erreur.name);
+        console.error('Message :', erreur.message);
+        console.error('Pile complète :', erreur.stack);
+        console.error('==================================');
+
+        return res.status(500).json({
+            error: erreur.message
+        });
+    }
 });
 
 /**

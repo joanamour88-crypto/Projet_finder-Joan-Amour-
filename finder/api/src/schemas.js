@@ -31,7 +31,7 @@ export const schemaGetChambre = z.object({
     hotel: z.coerce.number().int().positive().optional(),
     categorie: z.enum(['double', 'familiale', 'suite', 'simple']).optional(),
     capacite: z.coerce.number().int().positive().optional(),
-    prixNuit: z.coerce.number().positive().optional(),
+    prix_max: z.coerce.number().positive().optional(),
     description: z.coerce.string().optional(),
     disponible: z.coerce.boolean().optional()
 });

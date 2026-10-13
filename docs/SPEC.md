@@ -23,19 +23,19 @@ corps JSON
 n'est pas commité 
   
 ## Étapes 2 à 8 - déclarées, non franchies 
-[ ] E2  Base MySQL via Prisma : schéma, migration, seed du kit  -> tables 
+[x] E2  Base MySQL via Prisma : schéma, migration, seed du kit  -> tables 
 visibles dans Adminer 
-[ ] E3  Recherche de chambres disponibles                       -> GET 
+[x] E3  Recherche de chambres disponibles                       -> GET 
 /chambres?... filtre 
-[ ] E4  Inscription, connexion JWT 24 h, écritures protégées    -> sans 
+[x] E4  Inscription, connexion JWT 24 h, écritures protégées    -> sans 
 jeton 401, mauvais rôle 403 
-[ ] E5  Validation Zod [ACCEPTABLE]                              -> corps 
+[x] E5  Validation Zod [ACCEPTABLE]                              -> corps 
 invalide 400, jamais 500 
-[ ] E6  Réservations et statuts                                  -> 
+[x] E6  Réservations et statuts                                  -> 
 en_attente, confirmee, refusee, annulee 
-[ ] E7  Documentation Swagger de toutes les routes               -> /docs 
+[x] E7  Documentation Swagger de toutes les routes               -> /docs 
 les affiche toutes 
-[ ] E8  Tests et recette                                         -> npm test 
+[x] E8  Tests et recette                                         -> npm test 
 passe, TA-001 à TA-010 
   
 ## Gardes 

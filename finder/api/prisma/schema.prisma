@@ -5,8 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -23,8 +22,12 @@ model Chambres {
   capacite Int @map("capacite")
   prixNuit Int @map("prix_nuit")
   description String @map("description")
-  disponible Boolean @map("disponible")
+  disponible Boolean @default(true) @map("disponible")
   reservation Reservations[]
+
+  @@unique([hotelId, numero])
+  @@index([hotelId])
+  @@map("chambres")
 }
 
 model Hotels {
@@ -35,17 +38,19 @@ model Hotels {
   codePostal String @map("code_postal")
   ville String @map("ville")
   telephone String @map("telephone")
-  email String @map("email")
+  email String @unique @map("email")
   gerant String @map("gerant")
-  description String @map("description")
+  description String? @map("description")
   chambre Chambres[]
   comptes Comptes[]
+
+  @@map("hotels")
 }
 
 model Comptes {
   id Int @id @default(autoincrement())
   role String @map("role")
-  email String @map("email")
+  email String @unique @map("email")
   motDePasseClaire String @map("mot_de_passe_clair")
   nom String @map("nom")
   prenom String @map("prenom")
@@ -53,6 +58,9 @@ model Comptes {
   hotelId Int? @map("hotel_id")
   telephone String? @map("telephone")
   note String? @map("note")
+
+  @@index([hotelId])
+  @@map("comptes")
 }
 
 model Reservations {
@@ -65,4 +73,8 @@ model Reservations {
   nbPersonnes Int @map("nb_personnes")
   statut String @map("statut")
   demandeSpeciale String? @map("demande_speciale")
+
+  @@index([voyageurId])
+  @@index([chambreId, dateArrivee, dateDepart])
+  @@map("reservations")
 }
