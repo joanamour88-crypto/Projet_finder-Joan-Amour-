@@ -71,7 +71,7 @@ router.post('/login', validerBody(schemaConnexion), async (req, res) => {
             return res.status(401).json({ error: 'Identifiants invalides' });
         };
 
-        const token = jwt.sign({ id: user.id, email: user.email, role: user.role, hotelId: user.hotelId }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign({ id: user.id, email: user.email, role: user.role, hotelId: user.hotelId }, process.env.JWT_SECRET, { expiresIn: '1h' }); ///// ← 1h au lieu de 24h
 
         res.status(200).json({message: 'Connection réussie', token });
     } catch (erreur) {

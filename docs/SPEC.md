@@ -49,3 +49,16 @@ assez grand pour trancher
   
 ## Journal 
 AAAA-MM-JJ  ...  création v1, étape 1
+
+# Spec Finder - Sprint 2 [MINIMAL]
+#-→ Exemple
+# NNNN - <la décision, en une phrase>
+Date : AAAA-MM-JJ Statut : acceptée
+## Contexte
+<ce qui oblige à décider, en deux lignes>
+## Décision
+<ce qui est retenu, et où cela se voit dans le dépôt>
+## Alternatives écartées
+<deux autres façons de faire, chacune avec la raison de l'écarter>
+## Conséquences
+<ce que la décision impose aux étapes suivantes>

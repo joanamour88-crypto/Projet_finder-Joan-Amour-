@@ -23,12 +23,12 @@ const router = Router();
 router.get('/', async (req, res) => {
     try {
         const hotels = await prisma.hotels.findMany({
-            orderBy: { id: 'asc' }
+            orderBy: { nom: 'desc' } ///// ← hotel afficher par nom de Z a A
         });
         res.json(hotels);
     } 
     catch (error) {
-        res.status(500).json({ error: "Erreur lors de la récupération des hôtels" });
+        res.status(500).json({ error: error.message });
     }
 });
 

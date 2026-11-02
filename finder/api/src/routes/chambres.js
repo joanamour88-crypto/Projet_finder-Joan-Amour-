@@ -93,7 +93,8 @@ router.get('/', validerQuery(schemaGetChambre), async (req, res) => {
             return res.status(400).json({ error: 'Erreur dans les dates' });
         }
 
-        res.status(200).json(await prisma.chambres.findMany({ where: filtre }));
+        res.status(200).json(await prisma.chambres.findMany({ where: filtre })); //// erreur exprès → on cherche plusieus chambres donc findMany() au lieu de findUnique()
+    
 
     } catch (error) {
         console.error(error);
