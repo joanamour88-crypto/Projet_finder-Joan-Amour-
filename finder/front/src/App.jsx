@@ -2,6 +2,7 @@ import { useState } from "react";
 import FicheHotel from './composants/FicheHotel.jsx';
 import ListeChambre from './composants/ListeChambre.jsx';
 import DetailChambre from './composants/DetailChambre.jsx';
+import Recherche from './pages/Recherche.jsx';
 
 const hotelTransilvania = {
   name: 'Hotel Transilvania - Le Château de la Terreur ',
@@ -54,6 +55,7 @@ export default function App() {
   return (
     <div className="mx-auto max-w-5xl p-6">
       <h1 className="mb-6 text-3xl font-bold text-slate-800">Finder</h1>
+      <Recherche />
       <div>
         <FicheHotel hotel={hotelTransilvania} />
       </div>

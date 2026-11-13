@@ -18,7 +18,7 @@ export default function FicheHotel({ hotel }) {
                 <p className="text-sm text-slate-500">{hotel.adresse}</p>
                 <p className="text-xl font-semibold text-blue-700">
                     {hotel.prix} €
-                    <span className="text-sm font-normal text-slate-500"> / nuit</span>
+                    <span className="text-sm font-normal text-slate-500"></span>
                 </p>
             </div>
         </article>
