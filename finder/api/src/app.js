@@ -4,7 +4,7 @@ import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 //import { PrismaClient } from '../src/generated/prisma/client.ts';
 import { schemaInscription, schemaConnexion, schemaModifCompte, schemaCreateChambre, schemaGetChambre, schemaModifChambre, schemaReservation } from '../src/schemas.js';
-
+import cors from 'cors';
 
 import chambresRoutes from './routes/chambres.js';
 import hotelsRoutes from './routes/hotels.js';
@@ -14,6 +14,8 @@ import voyageursRoutes from './routes/voyageur.js';
 
 const app = express();
 app.use(express.json());
+
+app.use(cors({ origin: ['http://localhost:5173'] }));
 
 app.use('/chambres', chambresRoutes);
 app.use('/hotels', hotelsRoutes);
