@@ -56,7 +56,7 @@ export default function App() {
     <div className="mx-auto max-w-5xl p-6">
       <h1 className="mb-6 text-3xl font-bold text-slate-800">Finder</h1>
       <Recherche />
-      <div>
+      {/* <div>
         <FicheHotel hotel={hotelTransilvania} />
       </div>
       <div>
@@ -64,13 +64,13 @@ export default function App() {
       </div>
       <button onClick={ajouterMutation}>Ajouter (push)</button>
       <button onClick={ajouterProprement}>Ajouter (tableau neuf)</button>
-      {/*<div>
+      <div>
         <ListeChambre chambres={chambres} />
-      </div>*/}
+      </div>
       <div className="flex items-start gap-8">
         <ListeChambre chambres={chambres} onChoix={setSelection} selectionId={selection?.id} />
         {selection && (<DetailChambre chambre={selection} onFermer={() => setSelection(null)} />)}
-      </div>
+      </div> */}
     </div>
   );
 }
