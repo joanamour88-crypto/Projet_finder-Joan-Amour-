@@ -3,10 +3,11 @@ import FicheHotel from './composants/FicheHotel.jsx';
 import ListeChambre from './composants/ListeChambre.jsx';
 import DetailChambre from './composants/DetailChambre.jsx';
 import Accueil from './pages/Accueil.jsx';
-// import Connexion from './pages/Connexion.jsx';
+import Connexion from './pages/Connexion.jsx';
 // import Inscription from './pages/Inscription';
 // import MesReservations from './pages/MesReservations.jsx';
 import Recherche from './pages/Recherche.jsx';
+// import RouteProtegee from './RoutesProtegee.jsx'
 import {BrowserRouter, Routes, Route, Link, NavLink } from 'react-router-dom';
 
 const lienClasse = ({ isActive }) =>
@@ -45,11 +46,11 @@ export default function App() {
       </nav>
       <Routes>
         <Route path="/" element={<Accueil />}/>
-        {/* <Route path="/connexion" element={<Connexion />}/>
-        <Route path="/inscription" element={<Inscription />}/> */}
+        <Route path="/connexion" element={<Connexion />}/>
+        {/* <Route path="/inscription" element={<Inscription />}/> */}
         <Route path="/recherche" element={<Recherche />}/>
-        {/* <Route path="/reserve/:id" element={<Reserver />}/>
-        <Route path="/mes-reservations" element={<MesReservations />}/> */}
+        {/* <Route path="/reserve/:id" element={<RouteProtegee><Reserver /></RouteProtegee>}/> 
+        <Route path="/mes-reservations" element={<RouteProtegee><MesReservations /></RouteProtegee>}/> */}
         <Route path="*" element={<p>Page Introuvable</p>}/>
       </Routes>
     </BrowserRouter>
